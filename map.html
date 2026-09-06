@@ -1035,26 +1035,30 @@ const agoText = s => {
 const yearOf = s => (s && /^\d{4}/.test(s)) ? s.slice(0, 4) : '—';
 
 function buildTimeline(records) {
-  const byNovid = new Map();
-  for (const v of records) {
-    const id = v.novid || `noid-${v.violationid || Math.random()}`;
-    if (!byNovid.has(id)) byNovid.set(id, []);
-    byNovid.get(id).push(v);
-  }
+  // One entry per violation. This used to group rows by NOVID and show a single
+  // line per notice - but one HPD inspection writes many violations onto one
+  // notice (different apartments, different defects), so grouping hid most of
+  // them and made the timeline count disagree with the story / evidence count.
+  // De-dupe only exact repeats, on the same key the story and evidence tab use
+  // (apartment | description | notice-date), so all three land on the same
+  // number. No layout change: date anchor, wording, year headers and the
+  // pre-1990 rollup in renderTimeline() are all untouched. Grouping same-day
+  // violations visually is a later pass.
   const now = new Date();
+  const seen = new Set();
   const notices = [];
-  for (const [id, items] of byNovid) {
-    const f = items[0];
-    const nov = f.novissueddate || null;
-    const insp = items.map(x => x.inspectiondate).filter(Boolean).sort()[0] || null;
-    const correctBy = f.newcorrectbydate || f.originalcorrectbydate || null;
-    const certifyBy = f.newcertifybydate || f.originalcertifybydate || null;
-    const certified = items.map(x => x.certifieddate).filter(Boolean).sort()[0] || null;
-    const status = f.currentstatus || '';
-    const statusDate = f.currentstatusdate || null;
-    const apts = [...new Set(items.map(x => x.apartment).filter(Boolean))];
-    const cls = items.map(x => x.class).sort()[0] || null;
-    const defect = shortLabel(f.novdescription || '');
+  for (const v of records) {
+    const key = `${v.apartment || ''}|${v.novdescription || ''}|${v.novissueddate || ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const nov = v.novissueddate || null;
+    const insp = v.inspectiondate || null;
+    const correctBy = v.newcorrectbydate || v.originalcorrectbydate || null;
+    const certifyBy = v.newcertifybydate || v.originalcertifybydate || null;
+    const certified = v.certifieddate || null;
+    const status = v.currentstatus || '';
+    const statusDate = v.currentstatusdate || null;
     const isCertified = CERT_OK.includes(status);
     const missed = correctBy && new Date(correctBy) < now && !isCertified;
     const frozen = missed && nov && statusDate &&
@@ -1062,10 +1066,15 @@ function buildTimeline(records) {
     const yearsFrozen = (frozen && statusDate)
       ? (now - new Date(statusDate)) / (365 * 86400000) : 0;
     const n = {
-      id, sortKey: nov || insp || '', year: yearOf(nov || insp),
-      insp, approved: f.approveddate || null, nov, correctBy, certifyBy, certified,
-      status, statusDate, apts, cls, defect, count: items.length,
-      ordernumber: f.ordernumber || null,
+      id: v.novid || `noid-${v.violationid || Math.random()}`,
+      sortKey: nov || insp || '', year: yearOf(nov || insp),
+      insp, approved: v.approveddate || null, nov, correctBy, certifyBy, certified,
+      status, statusDate,
+      apts: v.apartment ? [v.apartment] : [],
+      cls: v.class || null,
+      defect: shortLabel(v.novdescription || ''),
+      count: 1,
+      ordernumber: v.ordernumber || null,
       isCertified, missed, frozen, yearsFrozen,
     };
     const c = classifyNotice(n);
