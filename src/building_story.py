@@ -21,10 +21,23 @@ MIN_CERT_ATTEMPTS_FOR_ENGAGEMENT = 3
 # often still an active matter, not a cold case - and at 365 days three of
 # every four buildings citywide landed in the least-active bucket.
 RECENT_WINDOW_DAYS = 730
-# A "frozen" violation must have been in its stuck state (deadline passed,
-# status never moved off issuance) for at least this many years - short of
-# it, the lapse is more likely re-inspection lag than abandonment.
-FROZEN_MIN_YEARS = 3
+# A "frozen" violation has had zero recorded activity for at least this many
+# years. HPD's correction/certification/re-inspection cycle runs in
+# weeks-to-months, so two years of total silence is abandonment, not backlog.
+# See _frozen_silent_years() below.
+FROZEN_MIN_YEARS = 2
+# Certification statuses that mean the violation is resolved (owner certified,
+# city accepted) - never "frozen" however old.
+FROZEN_RESOLVED_STATUSES = {
+    "NOV CERTIFIED ON TIME", "NOV CERTIFIED LATE",
+    "LEAD DOCS SUBMITTED, ACCEPTABLE", "COMPLIED IN ACCESS AREA",
+}
+# Rejected-certification statuses. The owner engaged (falsely, but engaged);
+# this feeds the "Resistant" engagement read, so it is its own story, not
+# "frozen".
+FROZEN_REJECTED_STATUSES = {
+    "FALSE CERTIFICATION", "INVALID CERTIFICATION", "LEAD DOCS SUBMITTED, NOT ACCEPTABLE",
+}
 # p75 of real_defect_count within the Isolated/Widespread candidate pool
 # (buildings with >=1 real defect and no Persistent/Chronic recurring
 # signature; n=106,669, calibrated via scripts/calibrate_real_defect_count.py
@@ -105,6 +118,47 @@ def _parse_date(s):
         return None
 
 
+def _frozen_silent_years(v, today):
+    """If a violation is "frozen", the number of years its record has been
+    silent; otherwise None. Shared by the story's frozen count and the map
+    timeline's grey state so the two always report the same number.
+
+    Frozen = all of: (1) not resolved, (2) not an administrative filing
+    obligation or a rejected certification (each its own story), (3) a real
+    correction deadline that has passed, (4) nothing recorded for
+    FROZEN_MIN_YEARS+. Deliberately NOT gated on "the status never moved off
+    issuance" - one dead-end stamp years ago leaves a violation just as frozen
+    as one that was never touched.
+    """
+    status = v.get("currentstatus") or ""
+    if status in FROZEN_RESOLVED_STATUSES:
+        return None
+    if v.get("ordernumber") in ADMINISTRATIVE_ORDERNUMBERS:
+        return None
+    if status in FROZEN_REJECTED_STATUSES:
+        return None
+    deadline = _parse_date(v.get("newcorrectbydate")) or _parse_date(v.get("originalcorrectbydate"))
+    if not deadline or deadline >= today:
+        return None
+    # Last recorded activity. currentstatusdate covers ~100% of rows but a few
+    # dozen carry junk (year 9999) - reject future / pre-1970 and fall back to
+    # the NOV date.
+    last = None
+    for s in (v.get("currentstatusdate"), v.get("novissueddate")):
+        d = _parse_date(s)
+        if d and d <= today and d.year >= 1970:
+            last = d
+            break
+    if not last:
+        return None
+    years = (today - last).days / 365
+    return years if years >= FROZEN_MIN_YEARS else None
+
+
+def _frozen_state(v, today):
+    return _frozen_silent_years(v, today) is not None
+
+
 @dataclass
 class BuildingProfile:
     buildingid: str
@@ -134,14 +188,13 @@ class BuildingProfile:
     n_defect_visits: int          # distinct dates a real (non-admin) defect was cited, any ordernumber
     defect_visit_span_years: float
 
-    # Process-staleness signals (Findings 8/9). Computed over real (non-admin),
-    # non-certified violations only. "Frozen" = the violation's status has not
-    # moved past issuance (currentstatusdate within ~14 days of novissueddate)
-    # AND its correction deadline has passed - i.e. notice mailed, deadline
-    # blown, nothing recorded since, from either the owner or HPD.
+    # Process-staleness signals. "Frozen" = correction deadline passed, not
+    # resolved, and nothing recorded for FROZEN_MIN_YEARS+ - see
+    # _frozen_silent_years(), which the map timeline shares so the counts
+    # agree. stale_status_count is a separate softer 5-year signal.
     frozen_overdue_count: int = 0
     frozen_overdue_share: float = 0.0   # / real_defect_count
-    frozen_years_max: float = 0.0       # years since the oldest frozen violation last changed status
+    frozen_years_max: float = 0.0       # years the longest-silent frozen violation has gone without a record
     stale_status_count: int = 0         # real, uncertified violations with no status change in 5+ years
     timeline_fields_present: bool = False  # False when the cache predates the timeline-field re-pull
 
@@ -319,24 +372,18 @@ def build_profile(buildingid: str, violations: list[dict], today: datetime) -> B
         if cls == "C" and not certified:
             class_c_open += 1
 
-        # Process-staleness (Findings 8/9): real, uncertified violations only.
-        is_real = v.get("ordernumber") not in ADMINISTRATIVE_ORDERNUMBERS
-        if timeline_present and is_real and not certified:
+        # Process-staleness. stale_status_count is a softer 5-year signal over
+        # any real uncertified violation; frozen is the sharp one - see
+        # _frozen_silent_years().
+        if timeline_present:
+            is_real = v.get("ordernumber") not in ADMINISTRATIVE_ORDERNUMBERS
             status_date = _parse_date(v.get("currentstatusdate"))
-            if status_date:
-                years_since_status = (today - status_date).days / 365
-                if years_since_status >= 5:
-                    stale_status_count += 1
-                # "Frozen": status never moved past issuance, the correction
-                # deadline is in the past, AND that has been the state for
-                # 3+ years. The age floor is what separates this from an
-                # ordinary recent violation whose short (Class C) deadline has
-                # lapsed while the city works through its re-inspection queue -
-                # without it, a fresh 300-violation dump reads as "300 frozen".
-                never_moved = nov_date and (status_date - nov_date).days <= 14
-                if never_moved and deadline and deadline < today and years_since_status >= FROZEN_MIN_YEARS:
-                    frozen_overdue_count += 1
-                    frozen_years_max = max(frozen_years_max, years_since_status)
+            if is_real and not certified and status_date and (today - status_date).days / 365 >= 5:
+                stale_status_count += 1
+            silent_years = _frozen_silent_years(v, today)
+            if silent_years is not None:
+                frozen_overdue_count += 1
+                frozen_years_max = max(frozen_years_max, silent_years)
 
         ordernumber = v.get("ordernumber")
         novid = v.get("novid")
@@ -542,10 +589,10 @@ def generate_narrative(p: BuildingProfile) -> str:
     # re-says one of those facts in different words no matter how it's
     # phrased - that's what kept resurfacing as "yet another" duplicate.
     # When the timeline dates are on hand and several violations are provably
-    # abandoned (deadline passed, status never moved off issuance, nothing
-    # recorded since), say so with the hard count - it's a sharper, more
-    # certain statement than "Gone quiet" and it subsumes the oldest-deadline
-    # sentence, so that one is skipped in this branch.
+    # abandoned (deadline passed, nothing recorded for 2+ years - see
+    # _frozen_silent_years()), say so with the hard count - it's a sharper,
+    # more certain statement than "Gone quiet" and it subsumes the
+    # oldest-deadline sentence, so that one is skipped in this branch.
     if p.timeline_fields_present and p.frozen_overdue_count >= 2:
         parts.append(
             f"{p.frozen_overdue_count} of these violations are frozen: the correction "

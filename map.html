@@ -950,13 +950,6 @@ function classifyNotice(n) {
   const deadlineAhead = n.correctBy && new Date(n.correctBy) > new Date();
 
   const yr = d => (d || '').slice(0, 4);
-  // How long since ANYTHING was recorded on this notice. 2+ years of that =
-  // frozen, whatever the last status says - an old "not complied with" with
-  // nothing since is just as dead as one that never moved off "notice sent".
-  const staleYrs = n.statusDate
-    ? (Date.now() - new Date(n.statusDate)) / (365 * 86400000)
-    : yrsOpen;
-  const stale = staleYrs >= 2;
 
   if (TL_FIXED.has(s))
     return { state: 'good', word: n.certified ? `landlord certified fixed in ${yr(n.certified)}, city accepted` : 'landlord certified fixed, city accepted' };
@@ -965,6 +958,19 @@ function classifyNotice(n) {
   if (TL_ADMIN[n.ordernumber])
     return { state: 'admin', word: 'a required filing the landlord still has not made'
       + (yrsOpen >= 1 ? ` — ${yrsOpen} yr${yrsOpen > 1 ? 's' : ''}` : '') };
+
+  // Frozen: deadline passed and nothing recorded for 2+ years. n.frozen is the
+  // shared predicate (frozenState in building_story.js), so the grey count
+  // here equals the story's "N frozen" exactly. Checked before city-follow-up:
+  // a reinspection promised years ago that never happened is frozen, not active.
+  if (n.frozen) {
+    if (s === 'NOT COMPLIED WITH')
+      return { state: 'stalled', word: `city marked it not complied in ${yr(n.statusDate)}, nothing since` };
+    if (s.includes('NO ACCESS TO RE'))
+      return { state: 'stalled', word: `inspector was denied access in ${yr(n.statusDate)}, nothing since` };
+    return { state: 'stalled', word: `no activity on record since ${yr(n.statusDate) || yr(n.nov)}` };
+  }
+
   if (TL_FOLLOW.has(s))
     return { state: 'follow', word: `city still acting on it — ${tlStatusShort(n.status)}` };
 
@@ -990,16 +996,9 @@ function classifyNotice(n) {
       : { state: 'new', word: `fix deadline is ${fmtDay(n.correctBy)} — not passed yet` };
   }
 
-  // Deadline passed. 2+ years dead since -> frozen; otherwise -> past-due,
-  // and always spell out how long ago the deadline blew (a few days vs a
-  // year reads very differently, especially for a short-fuse Class C).
-  if (stale) {
-    if (s === 'NOT COMPLIED WITH')
-      return { state: 'stalled', word: `city marked it not complied in ${yr(n.statusDate)}, nothing since` };
-    if (s.includes('NO ACCESS TO RE'))
-      return { state: 'stalled', word: `inspector was denied access in ${yr(n.statusDate)}, nothing since` };
-    return { state: 'stalled', word: `no city follow-up, nothing on record since ${yr(n.statusDate) || yr(n.nov)}` };
-  }
+  // Deadline passed but not frozen -> past-due. Spell out how long ago the
+  // deadline blew (a few days vs a year reads very differently, especially for
+  // a short-fuse Class C).
   const gap = agoText(n.correctBy);
   if (s === 'NOT COMPLIED WITH')
     return { state: 'warn', word: `city inspected, not fixed — deadline passed ${gap}` };
@@ -1061,10 +1060,10 @@ function buildTimeline(records) {
     const statusDate = v.currentstatusdate || null;
     const isCertified = CERT_OK.includes(status);
     const missed = correctBy && new Date(correctBy) < now && !isCertified;
-    const frozen = missed && nov && statusDate &&
-      (new Date(statusDate) - new Date(nov)) / 86400000 <= 21;
-    const yearsFrozen = (frozen && statusDate)
-      ? (now - new Date(statusDate)) / (365 * 86400000) : 0;
+    // "Frozen" uses the exact predicate the story uses (frozenState in
+    // building_story.js, loaded on this page), so the grey rows here and the
+    // story's "N frozen" are always the same count.
+    const frozen = frozenState(v, now);
     const n = {
       id: v.novid || `noid-${v.violationid || Math.random()}`,
       sortKey: nov || insp || '', year: yearOf(nov || insp),
@@ -1075,7 +1074,7 @@ function buildTimeline(records) {
       defect: shortLabel(v.novdescription || ''),
       count: 1,
       ordernumber: v.ordernumber || null,
-      isCertified, missed, frozen, yearsFrozen,
+      isCertified, missed, frozen,
     };
     const c = classifyNotice(n);
     n.state = c.state; n.stateWord = c.word;

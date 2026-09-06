@@ -16,8 +16,23 @@ const ACCEPTED_CERT_STATUSES = new Set(["NOV CERTIFIED ON TIME", "NOV CERTIFIED 
 const MIN_CERT_ATTEMPTS_FOR_ENGAGEMENT = 3;
 // "Recent" violation activity window - see building_story.py for the rationale.
 const RECENT_WINDOW_DAYS = 730;
-// Minimum years a violation must have been frozen to count - see building_story.py.
-const FROZEN_MIN_YEARS = 3;
+// A "frozen" violation has had zero recorded activity for at least this many
+// years. HPD's correction/certification/re-inspection cycle runs in
+// weeks-to-months, so two years of total silence is abandonment, not backlog.
+// See building_story.py and frozenSilentYears() below.
+const FROZEN_MIN_YEARS = 2;
+// Certification statuses that mean the violation is resolved (owner certified,
+// city accepted) - never "frozen" however old.
+const FROZEN_RESOLVED_STATUSES = new Set([
+  "NOV CERTIFIED ON TIME", "NOV CERTIFIED LATE",
+  "LEAD DOCS SUBMITTED, ACCEPTABLE", "COMPLIED IN ACCESS AREA",
+]);
+// Rejected-certification statuses. The owner engaged (falsely, but engaged);
+// this feeds the "Resistant" engagement read, so it is its own story, not
+// "frozen".
+const FROZEN_REJECTED_STATUSES = new Set([
+  "FALSE CERTIFICATION", "INVALID CERTIFICATION", "LEAD DOCS SUBMITTED, NOT ACCEPTABLE",
+]);
 // p75 of real_defect_count within the Isolated/Widespread candidate pool -
 // see the matching comment in building_story.py.
 const REAL_DEFECT_WIDESPREAD_THRESHOLD = 9;
@@ -63,6 +78,42 @@ function parseDate(s) {
 
 function daysBetween(later, earlier) {
   return Math.round((later - earlier) / 86400000); // ms per day
+}
+
+/**
+ * If a violation is "frozen", the number of years its record has been silent;
+ * otherwise null. Shared by the story's frozen count and the map timeline's
+ * grey state so the two always report the same number.
+ *
+ * Frozen = all of: (1) not resolved, (2) not an administrative filing
+ * obligation or a rejected certification (each its own story), (3) a real
+ * correction deadline that has passed, (4) nothing recorded for
+ * FROZEN_MIN_YEARS+. Deliberately NOT gated on "the status never moved off
+ * issuance" - one dead-end stamp years ago leaves a violation just as frozen
+ * as one that was never touched.
+ */
+function frozenSilentYears(v, today) {
+  const status = v.currentstatus || "";
+  if (FROZEN_RESOLVED_STATUSES.has(status)) return null;
+  if (ADMINISTRATIVE_ORDERNUMBERS.has(v.ordernumber)) return null;
+  if (FROZEN_REJECTED_STATUSES.has(status)) return null;
+  const deadline = parseDate(v.newcorrectbydate) || parseDate(v.originalcorrectbydate);
+  if (!deadline || deadline >= today) return null;
+  // Last recorded activity. currentstatusdate covers ~100% of rows but a few
+  // dozen carry junk (year 9999) - reject future / pre-1970 and fall back to
+  // the NOV date.
+  let last = null;
+  for (const s of [v.currentstatusdate, v.novissueddate]) {
+    const d = parseDate(s);
+    if (d && d <= today && d.getUTCFullYear() >= 1970) { last = d; break; }
+  }
+  if (!last) return null;
+  const years = daysBetween(today, last) / 365;
+  return years >= FROZEN_MIN_YEARS ? years : null;
+}
+
+function frozenState(v, today) {
+  return frozenSilentYears(v, today) !== null;
 }
 
 function levelScale(n) {
@@ -183,19 +234,18 @@ function buildProfile(buildingid, violations, today) {
     }
     if (cls === "C" && !certified) classCOpen++;
 
-    // Process-staleness (Findings 8/9): real, uncertified violations only.
-    const isReal = !ADMINISTRATIVE_ORDERNUMBERS.has(v.ordernumber);
-    if (timelinePresent && isReal && !certified) {
+    // Process-staleness. staleStatusCount is a softer 5-year signal over any
+    // real uncertified violation; frozen is the sharp one - see frozenSilentYears().
+    if (timelinePresent) {
+      const isReal = !ADMINISTRATIVE_ORDERNUMBERS.has(v.ordernumber);
       const statusDate = parseDate(v.currentstatusdate);
-      if (statusDate) {
-        const yearsSinceStatus = daysBetween(today, statusDate) / 365;
-        if (yearsSinceStatus >= 5) staleStatusCount++;
-        // 3+ year age floor - see the matching comment in building_story.py.
-        const neverMoved = novDate && daysBetween(statusDate, novDate) <= 14;
-        if (neverMoved && deadline && deadline < today && yearsSinceStatus >= FROZEN_MIN_YEARS) {
-          frozenOverdueCount++;
-          frozenYearsMax = Math.max(frozenYearsMax, yearsSinceStatus);
-        }
+      if (isReal && !certified && statusDate && daysBetween(today, statusDate) / 365 >= 5) {
+        staleStatusCount++;
+      }
+      const silentYears = frozenSilentYears(v, today);
+      if (silentYears !== null) {
+        frozenOverdueCount++;
+        frozenYearsMax = Math.max(frozenYearsMax, silentYears);
       }
     }
 
@@ -400,9 +450,9 @@ function generateNarrative(p) {
   }
 
   // When the timeline dates are on hand and several violations are provably
-  // abandoned (deadline passed, status never moved off issuance, nothing
-  // recorded since), say so with the hard count - see the matching comment
-  // in building_story.py. It subsumes the oldest-deadline sentence.
+  // abandoned (deadline passed, nothing recorded for 2+ years), say so with
+  // the hard count - see frozenSilentYears(). It subsumes the oldest-deadline
+  // sentence.
   if (p.timeline_fields_present && p.frozen_overdue_count >= 2) {
     parts.push(
       `${p.frozen_overdue_count} of these violations are frozen: the correction ` +
