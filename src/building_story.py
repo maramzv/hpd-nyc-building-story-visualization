@@ -453,7 +453,7 @@ def generate_narrative(p: BuildingProfile) -> str:
 
     if p.pattern == "No real defects":
         parts.append(
-            "None of these are physical defect records — every one is an administrative "
+            "None of these are physical defect records; every one is an administrative "
             "filing requirement (such as registration or bedbug-report compliance), not a "
             "cited problem with the building itself."
         )
@@ -510,7 +510,7 @@ def generate_narrative(p: BuildingProfile) -> str:
         if p.top_sig_coherent:
             what = "The same specific problem"
         else:
-            what = "The same administrative code — covering several different underlying defects —"
+            what = "The same administrative code, covering several different underlying defects,"
         parts.append(
             f"{what} has recurred {p.top_sig_notices} times over "
             f"{p.top_sig_span_years:.1f} years, {where}."
@@ -519,12 +519,12 @@ def generate_narrative(p: BuildingProfile) -> str:
     # Engagement
     if p.engagement == "Unaddressed":
         if p.non_compliance_total > 0:
-            parts.append("The correction deadlines have passed with no owner response — no certification has ever been filed, and some violations are flagged non-compliant.")
+            parts.append("The correction deadlines have passed with no owner response: no certification has ever been filed, and some violations are flagged non-compliant.")
         else:
             parts.append("The correction deadlines have passed and no certification has ever been filed for any of these violations.")
     elif p.engagement == "Too early to tell":
         if p.accepted_cert + p.rejected_cert > 0:
-            parts.append("Only one or two certifications are on record — too few to read the owner's pattern.")
+            parts.append("Only one or two certifications are on record, too few to read the owner's pattern.")
         else:
             parts.append("No certification has been attempted yet for these violations.")
     elif p.engagement == "Responsive":

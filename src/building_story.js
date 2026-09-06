@@ -325,7 +325,7 @@ function generateNarrative(p) {
 
   if (p.pattern === "No real defects") {
     parts.push(
-      "None of these are physical defect records — every one is an administrative " +
+      "None of these are physical defect records; every one is an administrative " +
       "filing requirement (such as registration or bedbug-report compliance), not a " +
       "cited problem with the building itself."
     );
@@ -375,19 +375,19 @@ function generateNarrative(p) {
     }
     const what = p.top_sig_coherent
       ? "The same specific problem"
-      : "The same administrative code — covering several different underlying defects —";
+      : "The same administrative code, covering several different underlying defects,";
     parts.push(`${what} has recurred ${p.top_sig_notices} times over ${p.top_sig_span_years.toFixed(1)} years, ${where}.`);
   }
 
   if (p.engagement === "Unaddressed") {
     if (p.non_compliance_total > 0) {
-      parts.push("The correction deadlines have passed with no owner response — no certification has ever been filed, and some violations are flagged non-compliant.");
+      parts.push("The correction deadlines have passed with no owner response: no certification has ever been filed, and some violations are flagged non-compliant.");
     } else {
       parts.push("The correction deadlines have passed and no certification has ever been filed for any of these violations.");
     }
   } else if (p.engagement === "Too early to tell") {
     if (p.accepted_cert + p.rejected_cert > 0) {
-      parts.push("Only one or two certifications are on record — too few to read the owner's pattern.");
+      parts.push("Only one or two certifications are on record, too few to read the owner's pattern.");
     } else {
       parts.push("No certification has been attempted yet for these violations.");
     }
