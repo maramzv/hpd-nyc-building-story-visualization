@@ -4,11 +4,11 @@
   "outputDirectory": ".",
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [
         { "type": "host", "value": "^hdp-.*\\.vercel\\.app$" }
       ],
-      "destination": "https://nyc-building-stories.vercel.app/:path*",
+      "destination": "https://nyc-building-stories.vercel.app/$1",
       "permanent": false
     }
   ],
