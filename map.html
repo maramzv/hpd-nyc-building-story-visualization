@@ -248,6 +248,20 @@
   .tl-list::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: 6px; width: 2px; background: #2b3444; }
   .tl-item { position: relative; padding: 0 0 10px 18px; }
   .tl-item:last-child { padding-bottom: 2px; }
+  /* One inspection = one node on an accent segment of the spine; its
+     violations hang off it. */
+  .tl-visit { position: relative; margin: 4px 0; }
+  .tl-visit::before {
+    content: ""; position: absolute; left: 3px; top: 3px; bottom: 7px; width: 4px;
+    background: #00b2a9; border-radius: 2px;
+  }
+  .tl-day { position: relative; padding: 1px 0 7px 18px; line-height: 1.35; }
+  .tl-visit .tl-day::before {
+    content: ""; position: absolute; left: 0; top: 4px; width: 10px; height: 10px;
+    border-radius: 50%; background: #00b2a9;
+  }
+  .tl-day-date { font-size: 10.5px; font-weight: 700; color: #c4c7d1; }
+  .tl-day-meta { font-size: 9.5px; color: #767c8c; margin-left: 6px; }
   /* Timeline dot = one Notice of Violation, colored by where it stands.
      Six states; the note text after the description carries the same colour,
      so colour is never the only cue.
@@ -293,7 +307,6 @@
   .tl-detail dd.miss-t { color: #f0b429; }
   .tl-detail dd.done-t { color: #2bb24d; }
   #timeline-empty { font-size: 11.5px; color: #767c8c; font-style: italic; padding: 6px 0; }
-  #timeline-more { font-size: 10px; color: #666c7c; text-align: center; padding: 6px 0 2px; }
   #tl-key {
     font-size: 9.5px; color: #a6adbb;
     padding: 0 0 10px; margin-bottom: 6px; border-bottom: 1px solid #23273499;
@@ -890,13 +903,12 @@ function renderEvidence(records) {
   }).join('');
 }
 
-/* ---------- Timeline tab: the building's full history, notice by notice ----------
+/* ---------- Timeline tab: the building's full history, violation by violation ----
  * Built straight from the live per-building fetch (which already carries every
  * process-timeline field: inspection, approval, both deadlines + revisions,
- * certification, current status). One entry per Notice of Violation (grouped by
- * NOVID - a single notice can carry several line items), newest first, grouped
- * by year, each expandable to that notice's full inspection->status arc. */
-const TIMELINE_NOTICE_LIMIT = 150; // covers all notices for all but a handful of extreme buildings
+ * certification, current status). One entry per violation, anchored on its
+ * inspection date, newest first, grouped by year; violations from the same
+ * inspection sit under a one-line header. Every violation is shown - no cap. */
 const TL_STATUS_SHORT = {
   'NOT COMPLIED WITH': 'not complied with',
   'NOV SENT OUT': 'notice of violation sent to owner',
@@ -1040,9 +1052,9 @@ function buildTimeline(records) {
   // them and made the timeline count disagree with the story / evidence count.
   // De-dupe only exact repeats, on the same key the story and evidence tab use
   // (apartment | description | notice-date), so all three land on the same
-  // number. No layout change: date anchor, wording, year headers and the
-  // pre-1990 rollup in renderTimeline() are all untouched. Grouping same-day
-  // violations visually is a later pass.
+  // number. Anchored on the inspection date (when the problem was seen); the
+  // NOV-issued date lives in each row's expandable detail. renderTimeline()
+  // gathers same-day violations under a one-line "one inspection" header.
   const now = new Date();
   const seen = new Set();
   const notices = [];
@@ -1066,7 +1078,7 @@ function buildTimeline(records) {
     const frozen = frozenState(v, now);
     const n = {
       id: v.novid || `noid-${v.violationid || Math.random()}`,
-      sortKey: nov || insp || '', year: yearOf(nov || insp),
+      sortKey: insp || nov || '', year: yearOf(insp || nov),
       insp, approved: v.approveddate || null, nov, correctBy, certifyBy, certified,
       status, statusDate,
       apts: v.apartment ? [v.apartment] : [],
@@ -1110,19 +1122,14 @@ function renderTimeline(records) {
   const body = document.getElementById('timeline-body');
   const notices = buildTimeline(records);
   if (!notices.length) {
-    body.innerHTML = `<div id="timeline-empty">No dated notices to lay out for this building.</div>`;
+    body.innerHTML = `<div id="timeline-empty">No violations on record for this building.</div>`;
     return;
   }
-  // Pre-1990 notices are almost always stale database artifacts, not live
-  // conditions (a 1965 inspection still marked "open"). Don't render them as
-  // individual dots implying they're current - roll them into one line.
-  const legacy = notices.filter(n => /^\d{4}$/.test(n.year) && +n.year < 1990);
-  const modern = notices.filter(n => !legacy.includes(n));
-
-  const shown = modern.slice(0, TIMELINE_NOTICE_LIMIT);
+  // Every violation is shown - no cap, no pre-1990 rollup. Old records are
+  // still real records; if one is dead it already reads as "frozen".
   const groups = [];
   let curYear = null, list = [];
-  for (const n of shown) {
+  for (const n of notices) {
     if (n.year !== curYear) {
       if (list.length) groups.push([curYear, list]);
       curYear = n.year; list = [];
@@ -1153,33 +1160,59 @@ function renderTimeline(records) {
     </div>
   </div>`;
 
-  body.innerHTML = key + groups.map(([yr, items]) => `
-    <div class="tl-year">${yr}</div>
-    <ul class="tl-list">${items.map(n => {
-      const noteTone = { good: 't-good', follow: 't-follow', new: 't-new', warn: 't-warn', stalled: 't-stalled', rejected: 't-rejected', admin: 't-admin' }[n.state] || '';
-      const where = n.apts.length > 1 ? `${n.apts.length} apts`
-        : n.apts.length === 1 ? `Apt ${n.apts[0]}` : 'common area';
-      const note = `<span class="tl-note ${noteTone}">— ${n.stateWord}</span>`;
-      return `<li class="tl-item tl-${n.state}">
-        <div class="tl-head">
-          <span class="tl-when">${fmtDay(n.nov || n.insp) || 'undated'} &middot; ${where}${n.cls ? ' &middot; Class ' + n.cls : ''}</span>
-          <span class="tl-what">${n.defect || 'violation'}</span> ${note} <span class="tl-chev">&#9662;</span>
-        </div>
-        <div class="tl-detail"><div>${noticeDetailHTML(n)}</div></div>
-      </li>`;
-    }).join('')}</ul>
-  `).join('')
-  + (legacy.length ? `<div class="tl-year">Before 1990</div>
-      <ul class="tl-list"><li class="tl-item tl-stalled"><div class="tl-head">
-        <span class="tl-when">${legacy[legacy.length - 1].year}–${legacy[0].year} &middot; ${legacy.length} legacy record${legacy.length > 1 ? 's' : ''}</span>
-        <span class="tl-what">still on file, decades past any deadline</span>
-        <span class="tl-note t-stalled">&mdash; likely stale database records, not live conditions</span>
-      </div></li></ul>` : '')
-  + (modern.length > shown.length
-    ? `<div id="timeline-more">showing the ${shown.length} most recent of ${modern.length} notices</div>` : '');
+  // Detail (the inspection->status arc) is built on first expand, not up front -
+  // a building with thousands of violations would otherwise pay for thousands
+  // of <dl>s nobody opens.
+  const flat = [];
+  const rowHTML = (n, showDate) => {
+    const noteTone = { good: 't-good', follow: 't-follow', new: 't-new', warn: 't-warn', stalled: 't-stalled', rejected: 't-rejected', admin: 't-admin' }[n.state] || '';
+    const where = n.apts.length ? `Apt ${n.apts[0]}` : 'common area';
+    const note = `<span class="tl-note ${noteTone}">— ${n.stateWord}</span>`;
+    const lead = (showDate ? `${fmtDay(n.insp || n.nov) || 'undated'} &middot; ` : '') + where + (n.cls ? ` &middot; Class ${n.cls}` : '');
+    const i = flat.push(n) - 1;
+    return `<div class="tl-item tl-${n.state}" data-i="${i}">
+      <div class="tl-head">
+        <span class="tl-when">${lead}</span>
+        <span class="tl-what">${n.defect || 'violation'}</span> ${note} <span class="tl-chev">&#9662;</span>
+      </div>
+      <div class="tl-detail"><div></div></div>
+    </div>`;
+  };
+
+  body.innerHTML = key + groups.map(([yr, items]) => {
+    // Gather consecutive violations that share an inspection date - one visit.
+    const days = [];
+    let curKey = null, dayList = [];
+    for (const n of items) {
+      const dk = n.insp || n.nov || '';
+      if (dk !== curKey) { if (dayList.length) days.push([curKey, dayList]); curKey = dk; dayList = []; }
+      dayList.push(n);
+    }
+    if (dayList.length) days.push([curKey, dayList]);
+
+    return `<div class="tl-year">${yr}</div>
+      <div class="tl-list">${days.map(([dk, dayItems]) => {
+        if (dayItems.length === 1) return rowHTML(dayItems[0], true);
+        // One inspection -> its findings hang off a single node on an
+        // accent-coloured segment of the timeline spine.
+        return `<div class="tl-visit">` +
+          `<div class="tl-day"><span class="tl-day-date">${fmtDay(dk) || 'undated'}</span>` +
+          `<span class="tl-day-meta">&middot; one inspection, ${dayItems.length} violations</span></div>` +
+          dayItems.map(n => rowHTML(n, false)).join('') +
+          `</div>`;
+      }).join('')}</div>`;
+  }).join('');
 
   body.querySelectorAll('.tl-head').forEach(h => {
-    h.onclick = () => h.parentElement.classList.toggle('open');
+    h.onclick = () => {
+      const li = h.parentElement;
+      const inner = li.querySelector('.tl-detail > div');
+      if (inner && !inner.dataset.built) {
+        inner.innerHTML = noticeDetailHTML(flat[+li.dataset.i]);
+        inner.dataset.built = '1';
+      }
+      li.classList.toggle('open');
+    };
   });
   const keyToggle = body.querySelector('.tl-key-toggle');
   if (keyToggle) keyToggle.onclick = () => document.getElementById('tl-key').classList.toggle('open');
