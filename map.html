@@ -248,20 +248,19 @@
   .tl-list::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: 6px; width: 2px; background: #2b3444; }
   .tl-item { position: relative; padding: 0 0 10px 18px; }
   .tl-item:last-child { padding-bottom: 2px; }
-  /* One inspection = one node on an accent segment of the spine; its
-     violations hang off it. */
-  .tl-visit { position: relative; margin: 4px 0; }
-  .tl-visit::before {
-    content: ""; position: absolute; left: 3px; top: 3px; bottom: 7px; width: 4px;
-    background: #00b2a9; border-radius: 2px;
+  /* One inspection: a header, then its violations joined first-dot-to-last by a
+     thin white line so they read as one visit. */
+  .tl-visit { position: relative; margin: 5px 0; }
+  .tl-visit-rows { position: relative; }
+  /* first violation's dot to the last one's - positioned in JS so it lands on
+     the dots regardless of how the row text wraps. */
+  .tl-visit-line {
+    position: absolute; left: 4px; width: 1.5px; background: #dfe3ea; border-radius: 1px;
   }
-  .tl-day { position: relative; padding: 1px 0 7px 18px; line-height: 1.35; }
-  .tl-visit .tl-day::before {
-    content: ""; position: absolute; left: 0; top: 4px; width: 10px; height: 10px;
-    border-radius: 50%; background: #00b2a9;
-  }
-  .tl-day-date { font-size: 10.5px; font-weight: 700; color: #c4c7d1; }
-  .tl-day-meta { font-size: 9.5px; color: #767c8c; margin-left: 6px; }
+  .tl-day { position: relative; padding: 1px 0 5px 18px; line-height: 1.35; }
+  .tl-day-date { font-size: 11px; font-weight: 700; color: #e8eaf0; }
+  .tl-day-meta { font-size: 10px; color: #c4c7d1; margin-left: 6px; }
+  .tl-day-meta b { color: #e8eaf0; font-weight: 600; }
   /* Timeline dot = one Notice of Violation, colored by where it stands.
      Six states; the note text after the description carries the same colour,
      so colour is never the only cue.
@@ -1118,6 +1117,11 @@ function noticeDetailHTML(n) {
   </dl>`;
 }
 
+// Re-runs the current timeline's connector-line layout. Needed because the
+// lines are measured from row offsets, which read as 0 while the Timeline tab
+// is hidden - so the tab-switch handler calls this when the tab is shown.
+let relayoutTimeline = () => {};
+
 function renderTimeline(records) {
   const body = document.getElementById('timeline-body');
   const notices = buildTimeline(records);
@@ -1164,11 +1168,12 @@ function renderTimeline(records) {
   // a building with thousands of violations would otherwise pay for thousands
   // of <dl>s nobody opens.
   const flat = [];
-  const rowHTML = (n, showDate) => {
+  const rowHTML = (n) => {
     const noteTone = { good: 't-good', follow: 't-follow', new: 't-new', warn: 't-warn', stalled: 't-stalled', rejected: 't-rejected', admin: 't-admin' }[n.state] || '';
     const where = n.apts.length ? `Apt ${n.apts[0]}` : 'common area';
     const note = `<span class="tl-note ${noteTone}">— ${n.stateWord}</span>`;
-    const lead = (showDate ? `${fmtDay(n.insp || n.nov) || 'undated'} &middot; ` : '') + where + (n.cls ? ` &middot; Class ${n.cls}` : '');
+    // the date lives in the .tl-day header now, so rows just carry apt + class
+    const lead = where + (n.cls ? ` &middot; Class ${n.cls}` : '');
     const i = flat.push(n) - 1;
     return `<div class="tl-item tl-${n.state}" data-i="${i}">
       <div class="tl-head">
@@ -1192,16 +1197,37 @@ function renderTimeline(records) {
 
     return `<div class="tl-year">${yr}</div>
       <div class="tl-list">${days.map(([dk, dayItems]) => {
-        if (dayItems.length === 1) return rowHTML(dayItems[0], true);
-        // One inspection -> its findings hang off a single node on an
-        // accent-coloured segment of the timeline spine.
+        // Every inspection gets the same header; a multi-violation one also gets
+        // a thin line joining its violations (drawn in drawVisitLines).
+        const c = dayItems.length;
         return `<div class="tl-visit">` +
           `<div class="tl-day"><span class="tl-day-date">${fmtDay(dk) || 'undated'}</span>` +
-          `<span class="tl-day-meta">&middot; one inspection, ${dayItems.length} violations</span></div>` +
-          dayItems.map(n => rowHTML(n, false)).join('') +
-          `</div>`;
+          `<span class="tl-day-meta">&mdash; inspection found <b>${c} violation${c === 1 ? '' : 's'}</b></span></div>` +
+          `<div class="tl-visit-rows">` +
+          dayItems.map(rowHTML).join('') +
+          `</div></div>`;
       }).join('')}</div>`;
   }).join('');
+
+  // Draw each inspection's connector line from its first violation's dot to its
+  // last one's. Positioned here (not in CSS) so it hits the dots exactly however
+  // the row text wraps; the dot centre sits 9px below each row's top.
+  const drawVisitLines = () => {
+    body.querySelectorAll('.tl-visit-line').forEach(l => l.remove());
+    body.querySelectorAll('.tl-visit-rows').forEach(rows => {
+      const items = rows.querySelectorAll(':scope > .tl-item');
+      if (items.length < 2) return;
+      const top = items[0].offsetTop + 9;
+      const bottom = items[items.length - 1].offsetTop + 9;
+      const line = document.createElement('div');
+      line.className = 'tl-visit-line';
+      line.style.top = top + 'px';
+      line.style.height = Math.max(0, bottom - top) + 'px';
+      rows.appendChild(line);
+    });
+  };
+  relayoutTimeline = drawVisitLines;
+  drawVisitLines();
 
   body.querySelectorAll('.tl-head').forEach(h => {
     h.onclick = () => {
@@ -1212,6 +1238,9 @@ function renderTimeline(records) {
         inner.dataset.built = '1';
       }
       li.classList.toggle('open');
+      // an expanded row inside a visit shifts later rows - redraw after the
+      // open/close transition settles
+      if (li.closest('.tl-visit-rows')) setTimeout(drawVisitLines, 180);
     };
   });
   const keyToggle = body.querySelector('.tl-key-toggle');
@@ -1225,6 +1254,7 @@ document.querySelectorAll('#story-tabs button').forEach(btn => {
     document.querySelectorAll('.tab-pane').forEach(p =>
       p.classList.toggle('active', p.id === 'tab-' + btn.dataset.tab));
     document.getElementById('panel').scrollTop = 0;
+    if (btn.dataset.tab === 'timeline') relayoutTimeline();
   });
 });
 function resetTabs() {
