@@ -10,7 +10,7 @@ This is a data-exploration and storytelling project, transforming data to real i
 
 ## The user
 
-> Anyone trying to understand NYC housing conditions through public data — no recommendation, no decision engine, just an honest, evidence-backed exploration of what the data shows.
+> Anyone trying to understand NYC housing conditions through public data with an evidence-backed exploration of what the data shows.
 
 ## The insight we're after
 

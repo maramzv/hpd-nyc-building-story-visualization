@@ -24,8 +24,9 @@ docs/
 docs/context/*
 !docs/context/visualization-findings.md
 
-# Claude Code chat transcripts (local records only)
+# Claude Code local config (transcripts, personal settings, local hooks)
 .claude/save-chat-state.json
+.claude/hooks/
 
 .vercel
 .env*
