@@ -1082,7 +1082,7 @@ function buildTimeline(records) {
       status, statusDate,
       apts: v.apartment ? [v.apartment] : [],
       cls: v.class || null,
-      defect: shortLabel(v.novdescription || ''),
+      defect: shortLabel(v.novdescription || '', v.ordernumber),
       count: 1,
       ordernumber: v.ordernumber || null,
       isCertified, missed, frozen,
@@ -1334,7 +1334,91 @@ const DEFECT_RULES = [
   [/APPROVED AND OPERATIONAL ([A-Z]+(?:\s[A-Z]+)?)\s+DETECT/i, m => sentenceCase(m[1]) + ' detector missing'],
 ];
 
-function shortLabel(description) {
+// Hand-written label per OrderNumber (the housing-code section) for the codes
+// whose meaning is consistent - covers ~87% of all violations citywide.
+// Codes NOT here fall through to the rules / trimmed-text path below; no forced
+// label for catch-all or procedural codes. See the "Violation Code Labels"
+// review artifact. Location (apt/room) is added separately from the row.
+const ORDER_LABELS = {
+  "106": "Fire-door shoe missing", "484": "Certificate of inspection visits not posted",
+  "485": "Certificate of inspection visits not posted", "491": "Illegal alteration - must legalize",
+  "495": "Illegal alteration - no certificate of occupancy", "497": "Temperature-reporting device not installed",
+  "499": "Temperature-device records not kept", "500": "Required tenant notice not posted",
+  "501": "Broken entrance-door lock", "504": "No power-outage door security",
+  "505": "Broken interior door", "506": "Missing electrical-outlet safety caps",
+  "507": "Roof leak", "508": "Broken plaster & peeling paint",
+  "509": "Loose wash basin", "512": "Broken fire-escape drop ladder",
+  "513": "Fire-escape drop-ladder won't slide", "521": "Illegal bars blocking fire-escape window",
+  "522": "Illegal bars blocking fire-escape window", "525": "Roof scuttle ladder not fixed in place",
+  "526": "Illegal electromagnetic door lock", "529": "Interior door needs refitting",
+  "530": "Self-closing door broken", "536": "Self-close device removed from door",
+  "538": "Hallway obstructed by household items", "539": "Fire escape obstructed",
+  "546": "Illegal double-cylinder door lock", "550": "Mold",
+  "551": "Rubbish - needs cleanse & disinfect", "552": "Refuse / rubbish accumulation",
+  "553": "Mold / needs cleansing", "554": "Radiator needs scraping & painting",
+  "555": "Peeling lead paint", "556": "Common-area ceiling needs repainting",
+  "566": "Fly infestation", "567": "Rat infestation",
+  "568": "Roach infestation", "569": "Mouse infestation",
+  "570": "Bedbugs", "576": "No cold water at kitchen sink",
+  "577": "No hot water at kitchen sink", "578": "Leaky water-supply pipe",
+  "579": "Leaky bathtub faucet", "583": "Water leak",
+  "591": "Toilet bowl not securely connected", "593": "Toilet won't flush properly",
+  "596": "Broken wash basin", "598": "Broken sink drain pipe",
+  "616": "Lead-based paint hazard", "617": "Lead-based paint hazard",
+  "618": "Required records not provided to HPD", "619": "Lead hazard - occupants not notified",
+  "620": "Required records not provided to HPD", "622": "Lead-paint vacancy certification not filed",
+  "623": "Lead-paint vacancy certification not filed", "624": "Lead-based paint hazard",
+  "649": "Blocked wash-basin drain", "658": "Cracked concrete paving at front yard",
+  "666": "No heat", "670": "No hot water",
+  "671": "Boiler-key holder notice not posted", "672": "Boiler room locked / no access",
+  "683": "Inadequate hallway lighting", "684": "Hallway light fixture inadequate",
+  "686": "Front entrance not adequately lit", "688": "Inadequate / unsafe electrical service",
+  "689": "Exposed electrical wiring", "690": "No peephole in apartment door",
+  "692": "No lock & key on apartment door", "693": "Building door not self-closing",
+  "700": "Smoke-detector notice not posted", "701": "No smoke detector",
+  "702": "Broken smoke detector", "722": "Owner/agent name sign not posted",
+  "742": "No gas supply to stove", "761": "Illegal rooms - discontinue & seal plumbing",
+  "765": "Apartments vacated - cannot reoccupy", "766": "Building vacant 60+ days",
+  "778": "Registration-number sign not posted", "780": "Building not registered",
+  "790": "Missing or broken window guards", "801": "Window won't stay open (broken balance)",
+  "802": "Broken wood floor", "805": "Broken marble door saddle",
+  "807": "Roof leak", "808": "Broken plaster & peeling paint",
+  "829": "Window sash needs refitting", "838": "Hallway obstructed by household items",
+  "846": "Illegal double-cylinder door lock", "856": "Common-area ceiling needs repainting",
+  "866": "Mice & roaches throughout", "868": "Roach infestation",
+  "869": "Mouse infestation", "870": "Bedbugs",
+  "879": "Leaky bathtub faucet", "883": "Water leak",
+  "891": "Toilet bowl not securely connected", "898": "Broken radiator supply connection",
+  "949": "Blocked wash-basin drain", "970": "No hot water",
+  "988": "Inadequate / unsafe electrical service", "989": "Exposed electrical wiring",
+  "1041": "Illegal cooking space", "1042": "No gas supply to stove",
+  "1051": "Illegal rooming unit - discontinue", "1061": "Illegal apartment - discontinue use",
+  "1067": "Whole building vacated - cannot reoccupy", "1493": "Illegal conversion to multiple dwelling",
+  "1501": "Carbon-monoxide notice not posted", "1502": "No carbon-monoxide detector",
+  "1503": "Broken carbon-monoxide detector", "1506": "Sprinkler notice not posted",
+  "1507": "Annual bedbug report not filed", "1520": "Rent-stabilization notice not posted",
+};
+
+// Leading imperative boilerplate HPD opens orders with - strip it so the
+// trimmed-text fallback reads "Broken light fixture" not "PROPERLY REPAIR OR
+// REPLACE THE BROKEN OR DEFECTIVE LIGHT FIXTURE IN THE KITCHEN LOCATED AT...".
+const ORDER_BOILERPLATE = [
+  /^(?:M\/?D\s+LAW|&\s*\d[\d.\-]*|DEPT\.?\s+RULES?(?:\s+AND\s+REG(?:ULATION)?S?\.?)?)\b[:.\-\s]*/i,
+  /^PROPERLY\s+/i,
+  /^(?:REPAIR|REPLACE|REFIT|RESET|REMOVE|PROVIDE|INSTALL|CORRECT|ABATE|TRACE|PAINT|SECURE|SCRAPE|CLEANSE|MAINTAIN|ADJUST|SEAL)\b(?:\s+(?:AND|OR|WITH SIMILAR MATERIAL|WITH NEW|WITH|SO AS TO BE|BY CLOSING|NEW|ALL|THE)\b)*\s+/i,
+  /^(?:THE\s+)?(?:NUISANCE|INFESTATION|ENCUMBRANCES?|ACCUMULATION)\s+CONSISTING\s+OF\s+(?:AN?\s+)?/i,
+  /^(?:THE\s+)?(?:BROKEN OR DEFECTIVE|LEAKY AND\/OR DEFECTIVE|MISSING OR DEFECTIVE|DEFECTIVE|BROKEN|MISSING|LOOSE|LEAKY)\s+/i,
+  /^(?:A|AN)\s+/i,
+];
+// where the defect ends and the location boilerplate begins
+const LOC_TAIL = /\s+(?:LOCATED\s+AT\b|AT\s+(?:PUBLIC HALL|APT\b|CEILING\b|SOUTH\b|NORTH\b|EAST\b|WEST\b|BUILDING\b|VESTIBULE\b|ENTRANCE\b)|IN\s+THE\s+(?:ENTIRE APARTMENT|\d(?:st|nd|rd|th)\s+ROOM|BATHROOM|KITCHEN|PRIVATE HALLWAY|FOYER|PUBLIC HALL)|,\s*\d(?:st|nd|rd|th)\s+STORY|,\s*SECTION\b|\.\.\.\s*AT\b)/i;
+
+function shortLabel(description, ordernumber) {
+  const byCode = ORDER_LABELS[ordernumber];
+  if (byCode) {
+    const loc = extractLocation(description || '');
+    return loc && !byCode.toLowerCase().includes(loc.toLowerCase()) ? `${byCode} · ${loc}` : byCode;
+  }
   const cleaned = stripCitation(description);
   for (const [pattern, toDefect] of DEFECT_RULES) {
     const m = cleaned.match(pattern);
@@ -1343,12 +1427,20 @@ function shortLabel(description) {
       return loc ? `${toDefect(m)} · ${loc}` : toDefect(m);
     }
   }
-  return cleaned.length > 72 ? cleaned.slice(0, cleaned.lastIndexOf(' ', 72)) + '…' : cleaned;
+  // trimmed-text fallback: drop the order-verb boilerplate and the trailing
+  // location, then truncate. No forced label.
+  let s = cleaned, prev;
+  do { prev = s; for (const r of ORDER_BOILERPLATE) s = s.replace(r, ''); } while (s !== prev && s);
+  const cut = s.search(LOC_TAIL);
+  if (cut > 8) s = s.slice(0, cut);
+  s = s.replace(/[\s.,;-]+$/, '').trim() || cleaned;
+  s = s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  return s.length > 66 ? s.slice(0, s.lastIndexOf(' ', 66)) + '…' : s;
 }
 
 function evMiniHTML(r) {
   const status = STATUS_SHORT[r.status] || r.status || '';
-  return `<div class="ev-mini"><span><span class="ev-c ${['A','B','C'].includes(r.class) ? r.class : ''}">${r.class||'?'}</span> · ${fmtDay(r.date) || 'no date'}</span><span class="ev-desc">${shortLabel(r.description)}${status ? ' — ' + status : ''}</span></div>`;
+  return `<div class="ev-mini"><span><span class="ev-c ${['A','B','C'].includes(r.class) ? r.class : ''}">${r.class||'?'}</span> · ${fmtDay(r.date) || 'no date'}</span><span class="ev-desc">${shortLabel(r.description, r.ordernumber)}${status ? ' — ' + status : ''}</span></div>`;
 }
 
 /**
