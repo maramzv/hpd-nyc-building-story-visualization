@@ -840,14 +840,12 @@ function renderSimilar(buildingid, pattern, neighborhood) {
 }
 
 function buildEvidenceFromRecords(records) {
-  const seen = new Set();
+  // Every row HPD returned - no de-duplication, so this count matches the
+  // story headline and the timeline exactly (see building_story.py).
   const out = [];
   for (const v of records) {
     const desc = (v.novdescription || '').trim();         // full text, not truncated
     const date = v.novissueddate ? v.novissueddate.slice(0, 10) : null;
-    const key = `${date}|${v.class}|${desc}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
     out.push({
       date, class: v.class, status: v.currentstatus, description: desc,
       ordernumber: v.ordernumber || null,
@@ -1045,23 +1043,17 @@ const agoText = s => {
 const yearOf = s => (s && /^\d{4}/.test(s)) ? s.slice(0, 4) : '—';
 
 function buildTimeline(records) {
-  // One entry per violation. This used to group rows by NOVID and show a single
-  // line per notice - but one HPD inspection writes many violations onto one
-  // notice (different apartments, different defects), so grouping hid most of
-  // them and made the timeline count disagree with the story / evidence count.
-  // De-dupe only exact repeats, on the same key the story and evidence tab use
-  // (apartment | description | notice-date), so all three land on the same
-  // number. Anchored on the inspection date (when the problem was seen); the
-  // NOV-issued date lives in each row's expandable detail. renderTimeline()
-  // gathers same-day violations under a one-line "one inspection" header.
+  // One entry per violation row HPD returned - no de-duplication (look-alike
+  // rows are often real separate citations; see building_story.py). The story
+  // headline and evidence tab count the same rows, so all three totals match.
+  // This used to group rows by NOVID into one line per notice, which hid most
+  // violations - a single HPD inspection writes many onto one notice.
+  // Anchored on the inspection date (when the problem was seen); the NOV-issued
+  // date lives in each row's expandable detail. renderTimeline() gathers
+  // same-day violations under a one-line "one inspection" header.
   const now = new Date();
-  const seen = new Set();
   const notices = [];
   for (const v of records) {
-    const key = `${v.apartment || ''}|${v.novdescription || ''}|${v.novissueddate || ''}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-
     const nov = v.novissueddate || null;
     const insp = v.inspectiondate || null;
     const correctBy = v.newcorrectbydate || v.originalcorrectbydate || null;

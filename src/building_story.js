@@ -178,20 +178,14 @@ function levelBacklog(days) {
  * @param {Date} today - reference date (real "now" in production, fixed in tests)
  */
 function buildProfile(buildingid, violations, today) {
-  const seen = new Set();
-  const deduped = [];
-  for (const v of violations) {
-    const key = `${v.apartment || ""}|${v.novdescription || ""}|${v.novissueddate || ""}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      deduped.push(v);
-    }
-  }
-
+  // Every row HPD returned is counted - one ViolationID, one violation. No
+  // de-duplication: look-alike rows are often real separate citations. See the
+  // matching comment in building_story.py. The evidence tab and map timeline
+  // count the same way, so the totals always match.
   const first = violations[0] || {};
   const address = `${first.housenumber || ""} ${first.streetname || ""}, ${first.boro || ""}`;
-  const activeCount = deduped.length;
-  const realDefectCount = deduped.filter(v => !ADMINISTRATIVE_ORDERNUMBERS.has(v.ordernumber)).length;
+  const activeCount = violations.length;
+  const realDefectCount = violations.filter(v => !ADMINISTRATIVE_ORDERNUMBERS.has(v.ordernumber)).length;
 
   let recentCount = 0, classCRecent = 0, classCTotal = 0, classCOpen = 0;
   let nonComplianceTotal = 0, nonComplianceRecent = 0;
@@ -211,7 +205,7 @@ function buildProfile(buildingid, violations, today) {
   // ordernumber - see the matching comment in building_story.py.
   const defectVisitDates = new Set();
 
-  for (const v of deduped) {
+  for (const v of violations) {
     const novDate = parseDate(v.novissueddate);
     const cls = v.class;
     const status = v.currentstatus;

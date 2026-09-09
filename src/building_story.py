@@ -300,18 +300,17 @@ def _level_backlog(days):
 
 
 def build_profile(buildingid: str, violations: list[dict], today: datetime) -> BuildingProfile:
-    """Compute the six-dimension profile for one building from its raw violation rows."""
-    seen = set()
-    deduped = []
-    for v in violations:
-        key = (v.get("apartment"), v.get("novdescription"), v.get("novissueddate"))
-        if key not in seen:
-            seen.add(key)
-            deduped.append(v)
+    """Compute the six-dimension profile for one building from its raw violation rows.
 
+    Every row HPD returned is counted - one ViolationID, one violation. No
+    de-duplication: look-alike rows (same apartment/description/date) are often
+    real separate citations, e.g. the same condition inspected in different
+    years and later carried onto one notice. The story, evidence tab and map
+    timeline all count the raw rows, so their totals always match.
+    """
     addr = f"{violations[0].get('housenumber','')} {violations[0].get('streetname','')}, {violations[0].get('boro','')}"
-    active_count = len(deduped)
-    real_defect_count = sum(1 for v in deduped if v.get("ordernumber") not in ADMINISTRATIVE_ORDERNUMBERS)
+    active_count = len(violations)
+    real_defect_count = sum(1 for v in violations if v.get("ordernumber") not in ADMINISTRATIVE_ORDERNUMBERS)
 
     recent_count = class_c_recent = class_c_total = class_c_open = 0
     non_compliance_total = non_compliance_recent = 0
@@ -340,7 +339,7 @@ def build_profile(buildingid: str, violations: list[dict], today: datetime) -> B
     # pattern logic above can't see since it only tracks same-code recurrence.
     defect_visit_dates = set()
 
-    for v in deduped:
+    for v in violations:
         nov_date = _parse_date(v.get("novissueddate"))
         cls = v.get("class")
         status = v.get("currentstatus")
