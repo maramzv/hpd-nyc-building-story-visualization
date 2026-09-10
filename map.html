@@ -2016,7 +2016,11 @@ Promise.all([
         data: [],
         extruded: true,
         pickable: true,
-        material: { ambient: 0.35, diffuse: 0.7, shininess: 24, specularColor: [255, 255, 255] },
+        // Keep the original ambient/diffuse so faces still read as 3D, and
+        // keep the top highlight - just at ~65% strength instead of pure
+        // white, which was blowing sun-facing faces out to solid white in
+        // bright areas.
+        material: { ambient: 0.35, diffuse: 0.65, shininess: 28, specularColor: [165, 165, 165] },
         getPolygon: r => r.polygon,
         getElevation: r => (r.d._fp.height_m > 3 ? r.d._fp.height_m : Math.max(r.d.floors || 3, 2) * 3.5),
         getFillColor: r => buildingFill(r.d),
@@ -2071,7 +2075,7 @@ Promise.all([
       extruded: true,
       pickable: true,
       elevationScale: 8,
-      material: { ambient: 0.35, diffuse: 0.65, shininess: 28, specularColor: [255, 255, 255] },
+      material: { ambient: 0.35, diffuse: 0.65, shininess: 28, specularColor: [165, 165, 165] },
       getPosition: d => [d.lon, d.lat],
       getElevation: d => Math.max(d.floors, 2),
       getFillColor: d => buildingFill(d),
