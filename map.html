@@ -631,9 +631,12 @@ function flyToBuildingCamera(map, d) {
 
 // Flies the camera back to a building and shows its Story view - used by
 // both the floating pin and the search bar's "View Story" link.
+// Open the Story panel *first*: it widens the map padding via
+// map.setPadding(), which MapLibre implements as a jumpTo() and so aborts any
+// in-flight camera animation - starting the flyTo afterwards keeps it intact.
 function flyToBuilding(d) {
-  flyToBuildingCamera(mapRef, d);
   showStory(d.neighborhood, d.boro);
+  flyToBuildingCamera(mapRef, d);
 }
 
 // The search box's left icon has 3 mutually-exclusive states - resting
@@ -745,20 +748,28 @@ function showStory(neighborhood, boro) {
 }
 
 function showExplorer() {
+  const panelStack = document.getElementById('panel-stack');
+  const explorerEl = document.getElementById('explorer-view');
+  const storyEl = document.getElementById('story-view');
+
+  // Narrow the panel and reset the map padding *before* the drill-down views
+  // below start their fly-back animation: syncMapPadding() is a setPadding(),
+  // which MapLibre runs as a jumpTo() that would abort an in-flight flyTo -
+  // so doing it after would kill the zoom-out to the neighborhood/borough.
+  explorerEl.style.display = 'block';
+  document.getElementById('panel').classList.remove('wide');
+  syncMapPadding(false);
+
   // Pre-set the drill-down to the right borough's neighborhood list before
   // Explorer becomes visible again - happens instantly while still hidden,
-  // so there's no visible flash of the wrong (top-level) list first.
+  // so there's no visible flash of the wrong (top-level) list first. Each of
+  // these also flies the camera back out to match (neighborhood, else city).
   if (storyBackTarget) {
     showNeighborhoodsView(storyBackTarget.boro, false, storyBackTarget.neighborhood);
   } else {
     showBoroughsView(false);
   }
-  const panelStack = document.getElementById('panel-stack');
-  const explorerEl = document.getElementById('explorer-view');
-  const storyEl = document.getElementById('story-view');
-  explorerEl.style.display = 'block';
-  document.getElementById('panel').classList.remove('wide');
-  syncMapPadding(false);
+
   requestAnimationFrame(() => panelStack.classList.remove('show-story'));
   setTimeout(() => { storyEl.style.display = 'none'; }, SLIDE_MS);
   // Deferred until Explorer is actually visible/laid out again, otherwise
@@ -798,6 +809,8 @@ function buildNbhdRow(boro, n) {
     selectedBoro = boro;
     selectedNeighborhood = n.neighborhood;
     refreshBuildingLayerStyling();
+    document.getElementById('all-boroughs-back').textContent =
+      `← ${boro.charAt(0) + boro.slice(1).toLowerCase()}`;
   };
   return nRow;
 }
@@ -814,6 +827,10 @@ function showNeighborhoodsView(boro, animate = true, highlightNeighborhood = nul
 
   const displayName = boro.charAt(0) + boro.slice(1).toLowerCase();
   document.getElementById('neighborhoods-heading').textContent = `${displayName} Neighborhoods`;
+  // When a single neighborhood is focused, the back control first steps out to
+  // the whole borough (see #all-boroughs-back handler), so label it that way.
+  document.getElementById('all-boroughs-back').textContent =
+    highlightNeighborhood ? `← ${displayName}` : '← All Boroughs';
   const listEl = document.getElementById('neighborhoods-list');
   listEl.innerHTML = '';
   const boroNbhds = neighborhoodsRef.filter(n => n.boro === boro).sort((a, b) => b.total - a.total);
@@ -873,7 +890,22 @@ function showBoroughsView(animate = true, fly = true) {
   }
 }
 
-document.getElementById('all-boroughs-back').onclick = () => showBoroughsView();
+// Stepped zoom-out: if we're currently focused on a single neighborhood
+// (e.g. just came back from a building's Story view), the first press pulls
+// back to the whole borough and stays on the neighborhood list; only once
+// nothing is focused does it return to the top-level Boroughs view + city.
+document.getElementById('all-boroughs-back').onclick = () => {
+  if (selectedNeighborhood && selectedBoro && BORO_CENTERS[selectedBoro]) {
+    const t = BORO_CENTERS[selectedBoro];
+    selectedNeighborhood = null;
+    if (selectedNameEl) { selectedNameEl.classList.remove('selected'); selectedNameEl = null; }
+    refreshBuildingLayerStyling();
+    document.getElementById('all-boroughs-back').textContent = '← All Boroughs';
+    if (mapRef) mapRef.flyTo({ center: t.center, zoom: t.zoom, pitch: 55, duration: 1500 });
+    return;
+  }
+  showBoroughsView();
+};
 
 function renderSimilar(buildingid, pattern, neighborhood) {
   const similarEl = document.getElementById('d-similar');
@@ -1758,8 +1790,8 @@ function renderSearch(data, map) {
   const results = document.getElementById('search-results');
 
   function selectMatch(m) {
+    showDetail(m); // opens the Story panel (widens padding) before the flyTo
     flyToBuildingCamera(map, m);
-    showDetail(m);
     results.classList.remove('open');
     box.value = m.address;
   }
@@ -1924,8 +1956,11 @@ Promise.all([
 
     const onClick = (info) => {
       if (!info.object) return;
-      flyToBuildingCamera(map, info.object);
+      // showDetail() opens the Story panel, which widens the map padding
+      // (a setPadding/jumpTo that would abort the flyTo) - so it has to run
+      // before flyToBuildingCamera, not after.
       showDetail(info.object);
+      flyToBuildingCamera(map, info.object);
     };
     const onHover = (info) => {
       if (info.object) {
@@ -1994,7 +2029,7 @@ Promise.all([
           getLineColor: selectedBuildingId,
           getFillColor: [selectedBoro, selectedNeighborhood, [...activePatterns].join(','), selectedBuildingId, RENDER_MODE],
         },
-        onClick: (info) => { if (info.object) { flyToBuildingCamera(map, info.object.d); showDetail(info.object.d); } },
+        onClick: (info) => { if (info.object) { showDetail(info.object.d); flyToBuildingCamera(map, info.object.d); } },
         onHover: (info) => {
           if (info.object) {
             const d = info.object.d;
