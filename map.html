@@ -468,8 +468,8 @@
 <div id="tooltip"></div>
 
 <div id="view-toggle" role="group" aria-label="Building view">
-  <button data-mode="columns" class="active" aria-pressed="true">Columns</button>
-  <button data-mode="footprints" aria-pressed="false">Buildings</button>
+  <button data-mode="columns" aria-pressed="false">Columns</button>
+  <button data-mode="footprints" class="active" aria-pressed="true">Buildings</button>
 </div>
 
 <div id="landing">
@@ -2080,10 +2080,10 @@ Promise.all([
     map.on('load', () => {
       for (const layer of buildingLayers) map.addLayer(layer);
       map.addLayer(selectionPinLayer);
-      updateVisibleBuildings();
 
-      // Optional deep-link / test hooks:
-      //   ?view=footprints            open straight into the Buildings renderer
+      // Real-footprint "Buildings" view is the default; ?view=columns opens the
+      // square-column view instead. (If footprints.json failed to load,
+      // applyRenderMode('footprints') is a no-op and we stay on columns.)
       //   ?cam=lng,lat,zoom,pitch,bearing   jump the camera + skip the fly-in
       const qs = new URLSearchParams(location.search);
       if (qs.get('cam')) {
@@ -2091,7 +2091,7 @@ Promise.all([
         const [lng, lat, zoom, pitch, bearing] = qs.get('cam').split(',').map(Number);
         map.jumpTo({ center: [lng, lat], zoom, pitch: pitch || 0, bearing: bearing || 0 });
       }
-      if (qs.get('view') === 'footprints') applyRenderMode('footprints');
+      applyRenderMode(qs.get('view') === 'columns' ? 'columns' : 'footprints');
       map.on('idle', () => { window.__MAP_IDLE__ = true; });
 
       // Thin "city limits" line + fading everything outside it (White
