@@ -16,6 +16,8 @@ data/*.pre-geocode
 !data/map_dataset.json
 !data/neighborhoods.json
 !data/nyc_boundary.geojson
+!data/footprints.json
+data/_fp_build_cache/
 data/sample2983_backup/
 docs/
 # ...except the public write-up deliverable (re-include its dir, but keep

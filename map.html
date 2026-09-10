@@ -387,6 +387,23 @@
   #landing button:hover { transform: translateY(-1px); opacity: 0.9; }
   #landing .hint { font-size: 11px; color: #666c7c; margin-top: 14px; }
   #landing.hidden { display: none; }
+
+  /* Map-style view switch: square columns (centroid + floors) vs real NYC
+     building-footprint geometry extruded to roof height. */
+  #view-toggle {
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 6;
+    display: flex; gap: 2px; padding: 3px;
+    background: rgba(18, 20, 28, 0.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.06); border-radius: 9px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+  }
+  #view-toggle button {
+    background: none; border: none; color: #9aa1b2; font: inherit; font-size: 12px; font-weight: 500;
+    padding: 6px 13px; border-radius: 6px; cursor: pointer; transition: background 0.12s, color 0.12s;
+  }
+  #view-toggle button:hover { color: #e8eaf0; }
+  #view-toggle button.active { background: rgba(255,255,255,0.09); color: #e8eaf0; }
+  #view-toggle .vt-icon { margin-right: 6px; opacity: 0.8; }
 </style>
 </head>
 <body>
@@ -449,6 +466,11 @@
 </div>
 <div id="status">Loading building data...</div>
 <div id="tooltip"></div>
+
+<div id="view-toggle" role="group" aria-label="Building view">
+  <button data-mode="columns" class="active" aria-pressed="true">Columns</button>
+  <button data-mode="footprints" aria-pressed="false">Buildings</button>
+</div>
 
 <div id="landing">
   <div class="content">
@@ -539,6 +561,14 @@ let buildingLayers = [];
 let mapRef = null;
 let neighborhoodsRef = null;
 
+// Two building renderers the "Columns / Buildings" switch toggles between:
+//   'columns'    - centroid square posts, height = floors (the default)
+//   'footprints' - real NYC building-footprint polygons (data/footprints.json,
+//                  joined on buildingid) extruded to their real roof height
+let RENDER_MODE = 'columns';
+let FOOTPRINTS_BY_ID = {};   // buildingid -> { rings, height_m, base_elev_m }
+let footprintLayer = null;   // deck.MapboxLayer(SolidPolygonLayer), created lazily
+
 // The pin has to sit at the selected building's actual roof height (not
 // ground level), which a maplibregl.Marker (plain HTML, ground-projected
 // only) can't do - a deck.gl IconLayer positioned with a real [lon, lat,
@@ -550,7 +580,12 @@ let selectionPinLayer = null;
 
 function updateSelectionPin(d) {
   if (!selectionPinLayer) return;
-  const roofHeight = Math.max(d.floors, 2) * 8 + 3; // matches ColumnLayer's elevation*elevationScale, +clearance
+  if (!d) { selectionPinLayer.setProps({ data: [] }); return; }
+  // Footprints view: sit the pin on the building's real roof height; columns
+  // view: match the ColumnLayer's elevation*elevationScale (+ clearance).
+  const roofHeight = (RENDER_MODE === 'footprints' && d._fp)
+    ? d._fp.height_m + 5
+    : Math.max(d.floors, 2) * 8 + 3;
   selectionPinLayer.setProps({ data: [{ ...d, height: roofHeight }] });
 }
 
@@ -560,7 +595,9 @@ function updateSelectionPin(d) {
 // 60 fills the frame and pushes the pin off-screen). Also lifts the target
 // with top-padding so the column has headroom, and keeps clear of the panel.
 function buildingCamera(d) {
-  const h = Math.max(d.floors || 3, 2) * 8; // metres, matches ColumnLayer elevation
+  // metres: real roof height in the Buildings view, else ColumnLayer elevation
+  const h = (RENDER_MODE === 'footprints' && d._fp && d._fp.height_m > 3)
+    ? d._fp.height_m : Math.max(d.floors || 3, 2) * 8;
   // Fit the whole column + roof pin in view: back the zoom off and flatten
   // the pitch as the building gets taller. A 30-storey tower needs a wider,
   // more top-down shot than a walkup or its roof pin sits off the top edge.
@@ -633,13 +670,12 @@ let selectedBoro = null;
 let selectedNeighborhood = null;
 
 function refreshBuildingLayerStyling() {
+  const fillTrig = [selectedBoro, selectedNeighborhood, [...activePatterns].join(','), selectedBuildingId, RENDER_MODE];
   for (const layer of buildingLayers) {
-    layer.setProps({
-      updateTriggers: {
-        getLineColor: selectedBuildingId,
-        getFillColor: [selectedBoro, selectedNeighborhood, [...activePatterns].join(',')],
-      },
-    });
+    layer.setProps({ updateTriggers: { getLineColor: selectedBuildingId, getFillColor: fillTrig } });
+  }
+  if (footprintLayer) {
+    footprintLayer.setProps({ updateTriggers: { getLineColor: selectedBuildingId, getFillColor: fillTrig } });
   }
 }
 
@@ -1830,12 +1866,17 @@ function deduplicateOverlappingCoordinates(data) {
 Promise.all([
   fetch('data/map_dataset.json').then(r => r.json()),
   fetch('data/neighborhoods.json').then(r => r.json()),
+  fetch('data/footprints.json').then(r => r.ok ? r.json() : []).catch(() => []),
 ])
-  .then(([data, neighborhoods]) => {
+  .then(([data, neighborhoods, footprints]) => {
     deduplicateOverlappingCoordinates(data);
     for (const n of neighborhoods) {
       NEIGHBORHOODS_BY_NAME[n.neighborhood] = n;
     }
+    // Real building footprints, joined to the rendered buildings on buildingid.
+    for (const f of footprints) FOOTPRINTS_BY_ID[f.buildingid] = f;
+    for (const d of data) { const f = FOOTPRINTS_BY_ID[d.buildingid]; if (f) d._fp = f; }
+    if (!footprints.length) document.getElementById('view-toggle').style.display = 'none';
     window.__TEST_DATA__ = data; // temporary hook for automated testing
     document.getElementById('status').innerHTML =
       `${data.length.toLocaleString()} buildings loaded` +
@@ -1891,6 +1932,64 @@ Promise.all([
     function buildingsInBounds(arr, b) {
       return arr.filter(d => d.lon >= b.west && d.lon <= b.east && d.lat >= b.south && d.lat <= b.north);
     }
+
+    // One fill-colour rule shared by both renderers so the switch never changes
+    // what a building's colour means - only its shape.
+    function buildingFill(d) {
+      const rgb = PATTERN_COLORS[d.pattern] || [120, 120, 120];
+      const inSelection = selectedNeighborhood ? d.neighborhood === selectedNeighborhood
+        : selectedBoro ? d.boro === selectedBoro
+        : true;
+      const inPatternFilter = activePatterns.has(d.pattern);
+      return [...rgb, (inSelection && inPatternFilter) ? 255 : 35];
+    }
+
+    // ---- Footprints renderer: real polygons extruded to real roof height ----
+    // deck.SolidPolygonLayer wants one polygon per datum, so a building with a
+    // multi-part footprint contributes several rows, each carrying the record
+    // on `.d`.
+    function footprintRowsInBounds(padded) {
+      const out = [];
+      for (const d of data) {
+        if (!d._fp) continue;
+        if (d.lon < padded.west || d.lon > padded.east || d.lat < padded.south || d.lat > padded.north) continue;
+        for (const ring of d._fp.rings) out.push({ d, polygon: ring });
+      }
+      return out;
+    }
+    function makeFootprintLayer() {
+      return new deck.MapboxLayer({
+        id: 'footprints',
+        type: deck.SolidPolygonLayer,
+        data: [],
+        extruded: true,
+        pickable: true,
+        material: { ambient: 0.35, diffuse: 0.7, shininess: 24, specularColor: [255, 255, 255] },
+        getPolygon: r => r.polygon,
+        getElevation: r => (r.d._fp.height_m > 3 ? r.d._fp.height_m : Math.max(r.d.floors || 3, 2) * 3.5),
+        getFillColor: r => buildingFill(r.d),
+        stroked: true,
+        getLineColor: r => r.d.buildingid === selectedBuildingId ? [255, 255, 255, 255] : [0, 0, 0, 0],
+        getLineWidth: 1,
+        lineWidthUnits: 'pixels',
+        lineWidthMinPixels: 2,
+        updateTriggers: {
+          getLineColor: selectedBuildingId,
+          getFillColor: [selectedBoro, selectedNeighborhood, [...activePatterns].join(','), selectedBuildingId, RENDER_MODE],
+        },
+        onClick: (info) => { if (info.object) { flyToBuildingCamera(map, info.object.d); showDetail(info.object.d); } },
+        onHover: (info) => {
+          if (info.object) {
+            const d = info.object.d;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (info.x + 14) + 'px';
+            tooltip.style.top = (info.y + 10) + 'px';
+            tooltip.innerHTML = `<div class="t-addr">${d.address}</div><div class="t-pattern">${d.pattern} · ${d.active_count} open</div>`;
+          } else { tooltip.style.display = 'none'; }
+        },
+      });
+    }
+
     function updateVisibleBuildings() {
       const b = map.getBounds();
       const lonPad = (b.getEast() - b.getWest()) * 0.3; // small pan margin so buildings don't pop in/out abruptly
@@ -1900,9 +1999,15 @@ Promise.all([
         south: b.getSouth() - latPad, north: b.getNorth() + latPad,
       };
       buildingLayers.forEach((layer, i) => {
-        layer.setProps({ data: buildingsInBounds(sizeTiers[i].data, padded) });
+        let vis = buildingsInBounds(sizeTiers[i].data, padded);
+        // In footprints view the columns only draw the fallback set - buildings
+        // with no matched real footprint - so nothing ever disappears.
+        if (RENDER_MODE === 'footprints') vis = vis.filter(d => !d._fp);
+        layer.setProps({ data: vis });
       });
+      if (footprintLayer) footprintLayer.setProps({ data: footprintRowsInBounds(padded) });
     }
+    window.__updateVisibleBuildings__ = updateVisibleBuildings;
 
     buildingLayers = sizeTiers.map((tier, i) => new deck.MapboxLayer({
       id: 'buildings-' + i,
@@ -1917,23 +2022,47 @@ Promise.all([
       material: { ambient: 0.35, diffuse: 0.65, shininess: 28, specularColor: [255, 255, 255] },
       getPosition: d => [d.lon, d.lat],
       getElevation: d => Math.max(d.floors, 2),
-      getFillColor: d => {
-        const rgb = PATTERN_COLORS[d.pattern] || [120, 120, 120];
-        const inSelection = selectedNeighborhood ? d.neighborhood === selectedNeighborhood
-          : selectedBoro ? d.boro === selectedBoro
-          : true;
-        const inPatternFilter = activePatterns.has(d.pattern);
-        return [...rgb, (inSelection && inPatternFilter) ? 255 : 35];
-      },
+      getFillColor: d => buildingFill(d),
       stroked: true,
       getLineColor: d => d.buildingid === selectedBuildingId ? [255, 255, 255, 255] : [0, 0, 0, 0],
       getLineWidth: 1,
       lineWidthUnits: 'pixels',
       lineWidthMinPixels: 2,
-      updateTriggers: { getLineColor: selectedBuildingId },
+      updateTriggers: {
+        getLineColor: selectedBuildingId,
+        getFillColor: [selectedBoro, selectedNeighborhood, [...activePatterns].join(','), selectedBuildingId, RENDER_MODE],
+      },
       onClick,
       onHover,
     }));
+
+    // ---- the Columns / Buildings switch ----
+    function applyRenderMode(mode) {
+      if (mode !== 'columns' && mode !== 'footprints') return;
+      if (mode === 'footprints' && !Object.keys(FOOTPRINTS_BY_ID).length) return;
+      RENDER_MODE = mode;
+      document.querySelectorAll('#view-toggle button').forEach(bt => {
+        const on = bt.dataset.mode === mode;
+        bt.classList.toggle('active', on);
+        bt.setAttribute('aria-pressed', String(on));
+      });
+      if (mode === 'footprints') {
+        if (!footprintLayer) {
+          footprintLayer = makeFootprintLayer();
+          map.addLayer(footprintLayer, map.getLayer('selection-pin') ? 'selection-pin' : undefined);
+        }
+      } else if (footprintLayer && map.getLayer('footprints')) {
+        map.removeLayer('footprints');
+        footprintLayer = null;
+      }
+      refreshBuildingLayerStyling();
+      updateVisibleBuildings();
+      updateSelectionPin(selectedBuildingData);
+    }
+    document.querySelectorAll('#view-toggle button').forEach(bt =>
+      bt.addEventListener('click', () => applyRenderMode(bt.dataset.mode)));
+    window.__setRenderMode__ = applyRenderMode;          // test hook
+    window.__renderMode__ = () => RENDER_MODE;           // test hook
 
     selectionPinLayer = new deck.MapboxLayer({
       id: 'selection-pin',
@@ -1952,6 +2081,18 @@ Promise.all([
       for (const layer of buildingLayers) map.addLayer(layer);
       map.addLayer(selectionPinLayer);
       updateVisibleBuildings();
+
+      // Optional deep-link / test hooks:
+      //   ?view=footprints            open straight into the Buildings renderer
+      //   ?cam=lng,lat,zoom,pitch,bearing   jump the camera + skip the fly-in
+      const qs = new URLSearchParams(location.search);
+      if (qs.get('cam')) {
+        document.getElementById('landing').classList.add('hidden');
+        const [lng, lat, zoom, pitch, bearing] = qs.get('cam').split(',').map(Number);
+        map.jumpTo({ center: [lng, lat], zoom, pitch: pitch || 0, bearing: bearing || 0 });
+      }
+      if (qs.get('view') === 'footprints') applyRenderMode('footprints');
+      map.on('idle', () => { window.__MAP_IDLE__ = true; });
 
       // Thin "city limits" line + fading everything outside it (White
       // Plains, Yonkers, Hackensack, Fort Lee, ...) keeps the map reading
