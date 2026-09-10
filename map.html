@@ -589,11 +589,24 @@ function updateSelectionPin(d) {
   selectionPinLayer.setProps({ data: [{ ...d, height: roofHeight }] });
 }
 
+// The floating panel sits over the left edge of the map, so every camera move
+// has to offset its target to the right by roughly the panel's width or the
+// thing being centred (borough, neighbourhood, building) lands behind the
+// panel. MapLibre's `padding` shifts the projected centre for fly/ease/jumpTo;
+// we keep a persistent value for the directory and a wider one while a
+// building's Story view (the `.wide` panel) is open.
+//   #panel: left 16px + width 320px (directory) / 468px (.wide) + a small gap
+const MAP_PAD_DIRECTORY = { top: 0, right: 0, bottom: 0, left: 352 };
+const MAP_PAD_STORY     = { top: 0, right: 0, bottom: 0, left: 500 };
+function syncMapPadding(storyOpen) {
+  if (mapRef) mapRef.setPadding(storyOpen ? MAP_PAD_STORY : MAP_PAD_DIRECTORY);
+}
+
 // Camera framing for a single building: zoom out and flatten pitch enough
 // that the whole 3D column fits top-to-bottom with its roof pin in view,
 // scaled to the building's real height (a 40-storey tower at zoom 17 / pitch
-// 60 fills the frame and pushes the pin off-screen). Also lifts the target
-// with top-padding so the column has headroom, and keeps clear of the panel.
+// 60 fills the frame and pushes the pin off-screen). Padding keeps the
+// building clear of the (wide) panel.
 function buildingCamera(d) {
   // metres: real roof height in the Buildings view, else ColumnLayer elevation
   const h = (RENDER_MODE === 'footprints' && d._fp && d._fp.height_m > 3)
@@ -610,7 +623,7 @@ function buildingCamera(d) {
               : h <= 130 ? 46
               : h <= 240 ? 39
               : 33;
-  return { center: [d.lon, d.lat], zoom, pitch, duration: 1700 };
+  return { center: [d.lon, d.lat], zoom, pitch, duration: 1700, padding: MAP_PAD_STORY };
 }
 function flyToBuildingCamera(map, d) {
   (map || mapRef) && (map || mapRef).flyTo(buildingCamera(d));
@@ -726,6 +739,7 @@ function showStory(neighborhood, boro) {
   storyBackTarget = boro ? { boro, neighborhood } : null;
   storyEl.style.display = 'block';
   document.getElementById('panel').classList.add('wide');
+  syncMapPadding(true);
   requestAnimationFrame(() => panelStack.classList.add('show-story'));
   setTimeout(() => { explorerEl.style.display = 'none'; }, SLIDE_MS);
 }
@@ -744,6 +758,7 @@ function showExplorer() {
   const storyEl = document.getElementById('story-view');
   explorerEl.style.display = 'block';
   document.getElementById('panel').classList.remove('wide');
+  syncMapPadding(false);
   requestAnimationFrame(() => panelStack.classList.remove('show-story'));
   setTimeout(() => { storyEl.style.display = 'none'; }, SLIDE_MS);
   // Deferred until Explorer is actually visible/laid out again, otherwise
@@ -778,7 +793,7 @@ function buildNbhdRow(boro, n) {
   const nNameEl = nRow.querySelector('.nbhd-name');
   nRow.onclick = (e) => {
     e.stopPropagation();
-    mapRef.flyTo({ center: [n.lon, n.lat], zoom: 15, pitch: 60, duration: 1800 });
+    mapRef.flyTo({ center: [n.lon, n.lat], zoom: 14.3, pitch: 60, duration: 1800 });
     selectName(nNameEl);
     selectedBoro = boro;
     selectedNeighborhood = n.neighborhood;
@@ -820,7 +835,7 @@ function showNeighborhoodsView(boro, animate = true, highlightNeighborhood = nul
   if (mapRef) {
     const n = highlightNeighborhood && neighborhoodsRef.find(x => x.boro === boro && x.neighborhood === highlightNeighborhood);
     if (n) {
-      mapRef.flyTo({ center: [n.lon, n.lat], zoom: 15, pitch: 60, duration: 1800 });
+      mapRef.flyTo({ center: [n.lon, n.lat], zoom: 14.3, pitch: 60, duration: 1800 });
     } else {
       const target = BORO_CENTERS[boro];
       if (target) mapRef.flyTo({ center: target.center, zoom: target.zoom, pitch: 55, duration: 1500 });
@@ -1665,15 +1680,16 @@ const HOME_VIEW = { center: [-73.97, 40.72], zoom: 10, pitch: 55, bearing: -10 }
 // from wherever the camera happens to be, which reads as an abrupt jump cut.
 function flyInFromStart() {
   if (!mapRef) return;
+  syncMapPadding(false);
   mapRef.jumpTo(INITIAL_VIEW);
   mapRef.flyTo({ ...HOME_VIEW, duration: 3500 });
 }
 const BORO_CENTERS = {
-  "MANHATTAN":     { center: [-73.9712, 40.7831], zoom: 12.5 },
-  "BRONX":         { center: [-73.8648, 40.8448], zoom: 11.5 },
-  "BROOKLYN":      { center: [-73.9442, 40.6782], zoom: 11.5 },
-  "QUEENS":        { center: [-73.7949, 40.7282], zoom: 11 },
-  "STATEN ISLAND": { center: [-74.1502, 40.5795], zoom: 11.5 },
+  "MANHATTAN":     { center: [-73.9800, 40.7660], zoom: 12.0 },
+  "BRONX":         { center: [-73.8648, 40.8448], zoom: 12.0 },
+  "BROOKLYN":      { center: [-73.9442, 40.6440], zoom: 11.5 },
+  "QUEENS":        { center: [-73.8110, 40.7180], zoom: 11.6 },
+  "STATEN ISLAND": { center: [-74.1840, 40.5520], zoom: 11.75 },
 };
 const PATTERN_ORDER = ["No real defects", "Isolated", "Widespread", "Persistent", "Chronic"];
 
@@ -1894,6 +1910,7 @@ Promise.all([
       antialias: true
     });
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    map.setPadding(MAP_PAD_DIRECTORY); // offset every camera move clear of the left panel
     window.__TEST_MAP__ = map; // temporary hook for automated testing
     renderBoroughs(data, neighborhoods, map);
     renderSearch(data, map);
