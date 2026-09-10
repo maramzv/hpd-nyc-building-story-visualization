@@ -47,7 +47,8 @@ OUT = DATA / "footprints.json"
 HPD_BUILDINGS = "kj4p-ruqc"
 FOOTPRINTS = "5zhs-2jue"
 FT_TO_M = 0.3048
-SIMPLIFY_M = 0.30   # drop a vertex if it sits within this of the segment it's on
+SIMPLIFY_M = 0.90   # drop a vertex within this of the segment it's on
+COORD_DP = 5       # ~1 m; keeps the whole-city file under Vercel's ~50 MB/file limit
 
 
 def q(**kw):
@@ -207,9 +208,15 @@ def outer_rings(geom):
     polys = coords if t == "MultiPolygon" else [coords] if t == "Polygon" else []
     out = []
     for poly in polys:
-        if poly and poly[0]:
-            ring = [[round(x, 6), round(y, 6)] for x, y in poly[0]]
-            out.append(simplify_ring(ring, SIMPLIFY_M / 111320.0))
+        if not (poly and poly[0]):
+            continue
+        ring = [[round(x, COORD_DP), round(y, COORD_DP)] for x, y in poly[0]]
+        dedup = [ring[0]]
+        for p in ring[1:]:
+            if p != dedup[-1]:
+                dedup.append(p)
+        if len(dedup) >= 4:
+            out.append(simplify_ring(dedup, SIMPLIFY_M / 111320.0))
     return out
 
 
@@ -261,13 +268,13 @@ for b in buildings:
     fallback_h = float(b.get("floors") or 3) * 3.5
     out.append({
         "buildingid": bid,
-        "height_m": round(hit["height_m"], 2) if hit["height_m"] > 3 else round(fallback_h, 2),
-        "base_elev_m": round(hit["base_elev_m"], 2),
-        "source": src,
+        "height_m": round(hit["height_m"], 1) if hit["height_m"] > 3 else round(fallback_h, 1),
         "rings": hit["rings"],
     })
 
-json.dump(out, open(OUT, "w"))
+# compact separators + the trims above keep the citywide file well under
+# Vercel's ~50 MB per-file limit (map.html hides the view toggle if it 404s).
+json.dump(out, open(OUT, "w"), separators=(",", ":"))
 sz = OUT.stat().st_size
 verts = sum(len(r) for e in out for r in e["rings"])
 print(f"\nstep 4 done -> {OUT}")
