@@ -25,3 +25,4 @@ data/*
 !data/map_dataset.json
 !data/neighborhoods.json
 !data/nyc_boundary.geojson
+!data/footprints.json
