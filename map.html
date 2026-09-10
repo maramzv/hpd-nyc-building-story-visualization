@@ -581,11 +581,15 @@ let selectionPinLayer = null;
 function updateSelectionPin(d) {
   if (!selectionPinLayer) return;
   if (!d) { selectionPinLayer.setProps({ data: [] }); return; }
-  // Footprints view: sit the pin on the building's real roof height; columns
-  // view: match the ColumnLayer's elevation*elevationScale (+ clearance).
-  const roofHeight = (RENDER_MODE === 'footprints' && d._fp)
-    ? d._fp.height_m + 5
-    : Math.max(d.floors, 2) * 8 + 3;
+  // Match whatever the building is actually drawn as, so the pin sits just above it:
+  //  - footprints view, real footprint  -> real roof height
+  //  - footprints view, fallback column -> floors * elevationScale (8)
+  //  - columns view -> getElevation * elevationScale = max(active_count,0.4)*0.625*8
+  let barTop;
+  if (RENDER_MODE === 'footprints' && d._fp) barTop = d._fp.height_m;
+  else if (RENDER_MODE === 'footprints') barTop = Math.max(d.floors, 2) * 8;
+  else barTop = Math.max(d.active_count, 0.4) * 0.625 * 8;
+  const roofHeight = barTop + Math.max(5, barTop * 0.03);
   selectionPinLayer.setProps({ data: [{ ...d, height: roofHeight }] });
 }
 
@@ -608,21 +612,35 @@ function syncMapPadding(storyOpen) {
 // 60 fills the frame and pushes the pin off-screen). Padding keeps the
 // building clear of the (wide) panel.
 function buildingCamera(d) {
-  // metres: real roof height in the Buildings view, else ColumnLayer elevation
-  const h = (RENDER_MODE === 'footprints' && d._fp && d._fp.height_m > 3)
-    ? d._fp.height_m : Math.max(d.floors || 3, 2) * 8;
-  // Fit the whole column + roof pin in view: back the zoom off and flatten
-  // the pitch as the building gets taller. A 30-storey tower needs a wider,
-  // more top-down shot than a walkup or its roof pin sits off the top edge.
-  const zoom = h <= 55 ? 17
-             : h <= 110 ? 16.3
-             : h <= 190 ? 15.7
-             : h <= 300 ? 15.2
-             : 14.8;
-  const pitch = h <= 55 ? 52
-              : h <= 130 ? 46
-              : h <= 240 ? 39
-              : 33;
+  // Buildings view is unchanged - frame the real roof height with the original
+  // zoom/pitch tiers.
+  if (RENDER_MODE !== 'columns') {
+    const h = (RENDER_MODE === 'footprints' && d._fp && d._fp.height_m > 3)
+      ? d._fp.height_m : Math.max(d.floors || 3, 2) * 8;
+    const zoom = h <= 55 ? 17
+               : h <= 110 ? 16.3
+               : h <= 190 ? 15.7
+               : h <= 300 ? 15.2
+               : 14.8;
+    const pitch = h <= 55 ? 52
+                : h <= 130 ? 46
+                : h <= 240 ? 39
+                : 33;
+    return { center: [d.lon, d.lat], zoom, pitch, duration: 1700, padding: MAP_PAD_STORY };
+  }
+  // Columns view: frame the full violation bar (active_count * 5m, up to ~6km)
+  // plus its roof pin. Zoom is derived from MapLibre's ground resolution so a
+  // tall spike backs the camera off proportionally; clamped so a 5m post doesn't
+  // zoom to street level. Pitch flattens as the bar grows so its top stays in
+  // frame.
+  const h = Math.max(d.active_count, 0.4) * 0.625 * 8;
+  const zoom = Math.max(12.5, Math.min(17, 21.3 - 0.7 * Math.log2(Math.max(h, 60))));
+  const pitch = h <= 60 ? 50
+              : h <= 150 ? 44
+              : h <= 400 ? 37
+              : h <= 1200 ? 30
+              : h <= 3000 ? 24
+              : 19;
   return { center: [d.lon, d.lat], zoom, pitch, duration: 1700, padding: MAP_PAD_STORY };
 }
 function flyToBuildingCamera(map, d) {
@@ -688,7 +706,7 @@ let selectedNeighborhood = null;
 function refreshBuildingLayerStyling() {
   const fillTrig = [selectedBoro, selectedNeighborhood, [...activePatterns].join(','), selectedBuildingId, RENDER_MODE];
   for (const layer of buildingLayers) {
-    layer.setProps({ updateTriggers: { getLineColor: selectedBuildingId, getFillColor: fillTrig } });
+    layer.setProps({ updateTriggers: { getLineColor: selectedBuildingId, getFillColor: fillTrig, getElevation: RENDER_MODE } });
   }
   if (footprintLayer) {
     footprintLayer.setProps({ updateTriggers: { getLineColor: selectedBuildingId, getFillColor: fillTrig } });
@@ -2077,7 +2095,16 @@ Promise.all([
       elevationScale: 8,
       material: { ambient: 0.35, diffuse: 0.65, shininess: 28, specularColor: [165, 165, 165] },
       getPosition: d => [d.lon, d.lat],
-      getElevation: d => Math.max(d.floors, 2),
+      // Columns view: elevation is a plain linear bar chart of open violations
+      // (active_count) - 1 violation = one unit, N violations = N units, no curve
+      // or cap. * elevationScale (8) gives final metres = active_count * 5, so a
+      // 1-violation building is a readable ~5m post and the tallest (~1268) is
+      // very tall by design. Color still means pattern category only.
+      // In footprints view these layers only draw fallback (no real footprint)
+      // buildings, which stay height-by-floors so Buildings view is unchanged.
+      getElevation: d => RENDER_MODE === 'columns'
+        ? Math.max(d.active_count, 0.4) * 0.625
+        : Math.max(d.floors, 2),
       getFillColor: d => buildingFill(d),
       stroked: true,
       getLineColor: d => d.buildingid === selectedBuildingId ? [255, 255, 255, 255] : [0, 0, 0, 0],
@@ -2087,6 +2114,7 @@ Promise.all([
       updateTriggers: {
         getLineColor: selectedBuildingId,
         getFillColor: [selectedBoro, selectedNeighborhood, [...activePatterns].join(','), selectedBuildingId, RENDER_MODE],
+        getElevation: RENDER_MODE,
       },
       onClick,
       onHover,
