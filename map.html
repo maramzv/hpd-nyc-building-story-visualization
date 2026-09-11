@@ -388,8 +388,9 @@
   #landing .hint { font-size: 11px; color: #666c7c; margin-top: 14px; }
   #landing.hidden { display: none; }
 
-  /* Map-style view switch: square columns (centroid + floors) vs real NYC
-     building-footprint geometry extruded to roof height. */
+  /* Lens picker: one segmented control, bottom-centre. 'Buildings' draws real
+     footprint geometry; the rest are square columns whose height encodes a
+     metric (violations / backlog age / Class C / recent). */
   #view-toggle {
     position: absolute; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 6;
     display: flex; gap: 2px; padding: 3px;
@@ -399,11 +400,22 @@
   }
   #view-toggle button {
     background: none; border: none; color: #9aa1b2; font: inherit; font-size: 12px; font-weight: 500;
-    padding: 6px 13px; border-radius: 6px; cursor: pointer; transition: background 0.12s, color 0.12s;
+    padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: background 0.12s, color 0.12s;
+    white-space: nowrap;
   }
   #view-toggle button:hover { color: #e8eaf0; }
   #view-toggle button.active { background: rgba(255,255,255,0.09); color: #e8eaf0; }
+  #view-toggle button:disabled { opacity: 0.4; cursor: default; }
   #view-toggle .vt-icon { margin-right: 6px; opacity: 0.8; }
+  /* one-line "what height means right now", pinned just above the control */
+  #lens-hint {
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: 52px; z-index: 6;
+    font-size: 11px; color: #b7bcc9; letter-spacing: 0.01em; pointer-events: none; white-space: nowrap;
+    background: rgba(18, 20, 28, 0.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.06); border-radius: 999px; padding: 3px 11px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  }
+  #lens-hint:empty { display: none; }
 </style>
 </head>
 <body>
@@ -467,9 +479,13 @@
 <div id="status">Loading building data...</div>
 <div id="tooltip"></div>
 
-<div id="view-toggle" role="group" aria-label="Building view">
-  <button data-mode="columns" aria-pressed="false">Columns</button>
+<div id="lens-hint" aria-live="polite"></div>
+<div id="view-toggle" role="group" aria-label="Map view">
   <button data-mode="footprints" class="active" aria-pressed="true">Buildings</button>
+  <button data-mode="columns" aria-pressed="false">Violations</button>
+  <button data-mode="age" aria-pressed="false">Age</button>
+  <button data-mode="classc" aria-pressed="false">Class C</button>
+  <button data-mode="recent" aria-pressed="false">Recent</button>
 </div>
 
 <div id="landing">
@@ -561,11 +577,50 @@ let buildingLayers = [];
 let mapRef = null;
 let neighborhoodsRef = null;
 
-// Two building renderers the "Columns / Buildings" switch toggles between:
-//   'columns'    - centroid square posts, height = floors (the default)
-//   'footprints' - real NYC building-footprint polygons (data/footprints.json,
-//                  joined on buildingid) extruded to their real roof height
-let RENDER_MODE = 'columns';
+// The bottom-centre control is a lens picker. One lens ('footprints') draws
+// real NYC building-footprint polygons (data/footprints.json) extruded to real
+// roof height; the rest are centroid square columns whose HEIGHT encodes an
+// analytical metric (linear, no cap - a building with more is always taller).
+// Colour always means the recurrence pattern, in every lens.
+//   metric: value that drives column height   max: its citywide max (filled at load)
+// Every column lens is a plain linear bar chart of its metric - no curve, no
+// cap. Heights are normalised per lens (see the load handler): the worst
+// building on a lens is drawn at LENS_TOP_M (the tallest violations spike), and
+// every other building is metric/max of that.
+const LENSES = {
+  footprints: { label: 'Buildings', hint: 'real building height' },
+  columns:    { label: 'Violations', hint: 'open violations',                       metric: d => d.active_count },
+  // Age gets a fixed per-year scale instead of the shared worst-building
+  // normalisation below - at the normalised rate (~x94/year) its bars
+  // dwarfed the other lenses, so it's pinned to a fixed x/year multiplier
+  // instead, chosen so the worst building (67.3yr, W 123rd St) tops out
+  // around 3,158m.
+  age:        { label: 'Age',        hint: 'years since the oldest open violation',  metric: d => d.backlog_years, scale: 46.93 },
+  classc:     { label: 'Class C',    hint: 'Class C (hazardous) violations',         metric: d => d.class_c_count },
+  recent:     { label: 'Recent',     hint: 'violations issued in the last 2 years',  metric: d => d.recent_count },
+};
+let RENDER_MODE = 'columns';   // key into LENSES; 'columns' is the Violations lens
+let LENS_TOP_M = 6340;         // height (m) of the worst building on any lens - set at load
+// Final column height in metres for whichever non-footprint lens is active
+// (getElevation returns this / elevationScale; pin + camera use it directly).
+function lensMeters(d) {
+  const L = LENSES[RENDER_MODE];
+  const raw = Math.max(L.metric(d) || 0, 0);
+  let m;
+  if (L.power) m = L.scale * Math.pow(raw, L.power);
+  else if (L.scale) m = raw * L.scale;
+  else m = raw / (L.max || 1) * LENS_TOP_M;
+  return Math.max(m, 3);
+}
+// Tooltip line: always "<pattern> · <n> open", plus the active lens's own
+// number when it isn't the one already shown (violations / buildings).
+function lensTooltip(d) {
+  const base = `${d.pattern} · ${d.active_count} open`;
+  if (RENDER_MODE === 'age')    return `${base} · oldest ${d.backlog_years}y`;
+  if (RENDER_MODE === 'classc') return `${base} · ${d.class_c_count} Class C`;
+  if (RENDER_MODE === 'recent') return `${base} · ${d.recent_count} since 2024`;
+  return base;
+}
 let FOOTPRINTS_BY_ID = {};   // buildingid -> { rings, height_m, base_elev_m }
 let footprintLayer = null;   // deck.MapboxLayer(SolidPolygonLayer), created lazily
 
@@ -584,11 +639,11 @@ function updateSelectionPin(d) {
   // Match whatever the building is actually drawn as, so the pin sits just above it:
   //  - footprints view, real footprint  -> real roof height
   //  - footprints view, fallback column -> floors * elevationScale (8)
-  //  - columns view -> getElevation * elevationScale = max(active_count,0.4)*0.625*8
+  //  - any column lens -> the lens's column height in metres (see lensMeters)
   let barTop;
   if (RENDER_MODE === 'footprints' && d._fp) barTop = d._fp.height_m;
   else if (RENDER_MODE === 'footprints') barTop = Math.max(d.floors, 2) * 8;
-  else barTop = Math.max(d.active_count, 0.4) * 0.625 * 8;
+  else barTop = lensMeters(d);
   const roofHeight = barTop + Math.max(5, barTop * 0.03);
   selectionPinLayer.setProps({ data: [{ ...d, height: roofHeight }] });
 }
@@ -614,8 +669,8 @@ function syncMapPadding(storyOpen) {
 function buildingCamera(d) {
   // Buildings view is unchanged - frame the real roof height with the original
   // zoom/pitch tiers.
-  if (RENDER_MODE !== 'columns') {
-    const h = (RENDER_MODE === 'footprints' && d._fp && d._fp.height_m > 3)
+  if (RENDER_MODE === 'footprints') {
+    const h = (d._fp && d._fp.height_m > 3)
       ? d._fp.height_m : Math.max(d.floors || 3, 2) * 8;
     const zoom = h <= 55 ? 17
                : h <= 110 ? 16.3
@@ -628,12 +683,11 @@ function buildingCamera(d) {
                 : 33;
     return { center: [d.lon, d.lat], zoom, pitch, duration: 1700, padding: MAP_PAD_STORY };
   }
-  // Columns view: frame the full violation bar (active_count * 5m, up to ~6km)
-  // plus its roof pin. Zoom is derived from MapLibre's ground resolution so a
-  // tall spike backs the camera off proportionally; clamped so a 5m post doesn't
-  // zoom to street level. Pitch flattens as the bar grows so its top stays in
-  // frame.
-  const h = Math.max(d.active_count, 0.4) * 0.625 * 8;
+  // Column lens: frame the full metric bar (can be km-tall) plus its roof pin.
+  // Zoom is derived from MapLibre's ground resolution so a tall spike backs the
+  // camera off proportionally; clamped so a short post doesn't zoom to street
+  // level. Pitch flattens as the bar grows so its top stays in frame.
+  const h = lensMeters(d);
   const zoom = Math.max(12.5, Math.min(17, 21.3 - 0.7 * Math.log2(Math.max(h, 60))));
   const pitch = h <= 60 ? 50
               : h <= 150 ? 44
@@ -1942,7 +1996,23 @@ Promise.all([
     // Real building footprints, joined to the rendered buildings on buildingid.
     for (const f of footprints) FOOTPRINTS_BY_ID[f.buildingid] = f;
     for (const d of data) { const f = FOOTPRINTS_BY_ID[d.buildingid]; if (f) d._fp = f; }
-    if (!footprints.length) document.getElementById('view-toggle').style.display = 'none';
+
+    // Every column lens is normalised to the same envelope: the worst building
+    // in the lens gets the SAME height as the tallest violations spike, and
+    // everything else scales in proportion. So each lens uses the full vertical
+    // range (its own structure reads clearly) - the trade-off is that a given
+    // building's height is only comparable within one lens, not across them.
+    for (const key of ['columns', 'age', 'classc', 'recent']) {
+      let mx = 0;
+      for (const d of data) { const v = LENSES[key].metric(d) || 0; if (v > mx) mx = v; }
+      LENSES[key].max = mx || 1;
+    }
+    LENS_TOP_M = LENSES.columns.max * 5;   // the tallest violations spike, in metres
+    if (!footprints.length) {
+      // Footprint data unavailable: keep the metric lenses, just disable Buildings.
+      const bb = document.querySelector('#view-toggle button[data-mode="footprints"]');
+      if (bb) { bb.disabled = true; bb.title = 'Footprint data unavailable'; }
+    }
     window.__TEST_DATA__ = data; // temporary hook for automated testing
     document.getElementById('status').innerHTML =
       `${data.length.toLocaleString()} buildings loaded` +
@@ -1985,7 +2055,7 @@ Promise.all([
         tooltip.style.display = 'block';
         tooltip.style.left = (info.x + 14) + 'px';
         tooltip.style.top = (info.y + 10) + 'px';
-        tooltip.innerHTML = `<div class="t-addr">${info.object.address}</div><div class="t-pattern">${info.object.pattern} · ${info.object.active_count} open</div>`;
+        tooltip.innerHTML = `<div class="t-addr">${info.object.address}</div><div class="t-pattern">${lensTooltip(info.object)}</div>`;
       } else {
         tooltip.style.display = 'none';
       }
@@ -2058,7 +2128,7 @@ Promise.all([
             tooltip.style.display = 'block';
             tooltip.style.left = (info.x + 14) + 'px';
             tooltip.style.top = (info.y + 10) + 'px';
-            tooltip.innerHTML = `<div class="t-addr">${d.address}</div><div class="t-pattern">${d.pattern} · ${d.active_count} open</div>`;
+            tooltip.innerHTML = `<div class="t-addr">${d.address}</div><div class="t-pattern">${lensTooltip(d)}</div>`;
           } else { tooltip.style.display = 'none'; }
         },
       });
@@ -2095,16 +2165,16 @@ Promise.all([
       elevationScale: 8,
       material: { ambient: 0.35, diffuse: 0.65, shininess: 28, specularColor: [165, 165, 165] },
       getPosition: d => [d.lon, d.lat],
-      // Columns view: elevation is a plain linear bar chart of open violations
-      // (active_count) - 1 violation = one unit, N violations = N units, no curve
-      // or cap. * elevationScale (8) gives final metres = active_count * 5, so a
-      // 1-violation building is a readable ~5m post and the tallest (~1268) is
-      // very tall by design. Color still means pattern category only.
-      // In footprints view these layers only draw fallback (no real footprint)
-      // buildings, which stay height-by-floors so Buildings view is unchanged.
-      getElevation: d => RENDER_MODE === 'columns'
-        ? Math.max(d.active_count, 0.4) * 0.625
-        : Math.max(d.floors, 2),
+      // Column lenses: elevation is a bar chart of the active lens's metric
+      // (violations / backlog years / Class C / recent) - see lensMeters() for
+      // the transform. getElevation returns metres/elevationScale (8); lensMeters
+      // is the final-metre version the pin and camera use, so the three stay in
+      // sync. Colour always means the recurrence pattern. In footprints view
+      // these layers only draw the fallback (no real footprint) set, kept at
+      // height-by-floors so the Buildings view is unchanged.
+      getElevation: d => RENDER_MODE === 'footprints'
+        ? Math.max(d.floors, 2)
+        : lensMeters(d) / 8,
       getFillColor: d => buildingFill(d),
       stroked: true,
       getLineColor: d => d.buildingid === selectedBuildingId ? [255, 255, 255, 255] : [0, 0, 0, 0],
@@ -2120,9 +2190,9 @@ Promise.all([
       onHover,
     }));
 
-    // ---- the Columns / Buildings switch ----
+    // ---- the lens picker ----
     function applyRenderMode(mode) {
-      if (mode !== 'columns' && mode !== 'footprints') return;
+      if (!LENSES[mode]) return;
       if (mode === 'footprints' && !Object.keys(FOOTPRINTS_BY_ID).length) return;
       RENDER_MODE = mode;
       document.querySelectorAll('#view-toggle button').forEach(bt => {
@@ -2130,6 +2200,8 @@ Promise.all([
         bt.classList.toggle('active', on);
         bt.setAttribute('aria-pressed', String(on));
       });
+      const hintEl = document.getElementById('lens-hint');
+      if (hintEl) hintEl.textContent = 'height = ' + LENSES[mode].hint;
       if (mode === 'footprints') {
         if (!footprintLayer) {
           footprintLayer = makeFootprintLayer();
@@ -2165,9 +2237,9 @@ Promise.all([
       for (const layer of buildingLayers) map.addLayer(layer);
       map.addLayer(selectionPinLayer);
 
-      // Real-footprint "Buildings" view is the default; ?view=columns opens the
-      // square-column view instead. (If footprints.json failed to load,
-      // applyRenderMode('footprints') is a no-op and we stay on columns.)
+      // Real-footprint "Buildings" is the default lens; ?lens=columns|age|classc|
+      // recent (or the older ?view=columns) opens another. If footprints.json
+      // failed to load, fall back to the Violations lens.
       //   ?cam=lng,lat,zoom,pitch,bearing   jump the camera + skip the fly-in
       const qs = new URLSearchParams(location.search);
       if (qs.get('cam')) {
@@ -2175,7 +2247,10 @@ Promise.all([
         const [lng, lat, zoom, pitch, bearing] = qs.get('cam').split(',').map(Number);
         map.jumpTo({ center: [lng, lat], zoom, pitch: pitch || 0, bearing: bearing || 0 });
       }
-      applyRenderMode(qs.get('view') === 'columns' ? 'columns' : 'footprints');
+      const wantLens = qs.get('lens') || qs.get('view');
+      const haveFp = Object.keys(FOOTPRINTS_BY_ID).length > 0;
+      applyRenderMode(LENSES[wantLens] && (wantLens !== 'footprints' || haveFp)
+        ? wantLens : (haveFp ? 'footprints' : 'columns'));
       map.on('idle', () => { window.__MAP_IDLE__ = true; });
 
       // Thin "city limits" line + fading everything outside it (White

@@ -10,6 +10,7 @@ data/*.geojson
 data/*.bak
 data/*.superseded*
 data/*.pre-geocode
+data/*.pre-lens-metrics
 !data/.gitkeep
 # map.html fetches these three directly - Vercel deploys straight from git,
 # so they have to actually be tracked, not just allowed through .vercelignore.
