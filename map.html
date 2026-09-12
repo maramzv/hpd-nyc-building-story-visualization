@@ -484,7 +484,7 @@
   <button data-mode="footprints" class="active" aria-pressed="true">Buildings</button>
   <button data-mode="columns" aria-pressed="false">Violations</button>
   <button data-mode="age" aria-pressed="false">Age</button>
-  <button data-mode="classc" aria-pressed="false">Class C</button>
+  <button data-mode="classc" aria-pressed="false">Severity</button>
   <button data-mode="recent" aria-pressed="false">Recent</button>
 </div>
 
@@ -588,7 +588,7 @@ let neighborhoodsRef = null;
 // building on a lens is drawn at LENS_TOP_M (the tallest violations spike), and
 // every other building is metric/max of that.
 const LENSES = {
-  footprints: { label: 'Buildings', hint: 'real building height' },
+  footprints: { label: 'Buildings', hint: 'actual building height from NYC footprint data' },
   columns:    { label: 'Violations', hint: 'open violations',                       metric: d => d.active_count },
   // Age gets a fixed per-year scale instead of the shared worst-building
   // normalisation below - at the normalised rate (~x94/year) its bars
@@ -596,7 +596,7 @@ const LENSES = {
   // instead, chosen so the worst building (67.3yr, W 123rd St) tops out
   // around 3,158m.
   age:        { label: 'Age',        hint: 'years since the oldest open violation',  metric: d => d.backlog_years, scale: 46.93 },
-  classc:     { label: 'Class C',    hint: 'Class C (hazardous) violations',         metric: d => d.class_c_count },
+  classc:     { label: 'Severity',   hint: 'Class C hazardous violations — the most severe kind', metric: d => d.class_c_count },
   recent:     { label: 'Recent',     hint: 'violations issued in the last 2 years',  metric: d => d.recent_count },
 };
 let RENDER_MODE = 'columns';   // key into LENSES; 'columns' is the Violations lens
