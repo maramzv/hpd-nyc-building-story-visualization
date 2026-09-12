@@ -687,18 +687,37 @@ function buildingCamera(d) {
   // Zoom is derived from MapLibre's ground resolution so a tall spike backs the
   // camera off proportionally; clamped so a short post doesn't zoom to street
   // level. Pitch flattens as the bar grows so its top stays in frame.
+  // This backoff has to hold up for every lens, not just Violations - the
+  // "typical" clicked building sits at very different points on the curve
+  // per lens (Age's median building is already several hundred metres tall;
+  // Violations' and Class C's are barely off the ground), so it's tuned more
+  // conservatively than a single-lens eyeball pass would need, with extra
+  // top padding reserved in proportion to the bar height so the roof pin
+  // never sits flush against the frame's top edge.
   const h = lensMeters(d);
-  const zoom = Math.max(12.5, Math.min(17, 21.3 - 0.7 * Math.log2(Math.max(h, 60))));
-  const pitch = h <= 60 ? 50
-              : h <= 150 ? 44
-              : h <= 400 ? 37
-              : h <= 1200 ? 30
-              : h <= 3000 ? 24
-              : 19;
-  return { center: [d.lon, d.lat], zoom, pitch, duration: 1700, padding: MAP_PAD_STORY };
+  const zoom = Math.max(11.8, Math.min(17, 20.6 - 0.72 * Math.log2(Math.max(h, 55))));
+  const pitch = h <= 45   ? 48
+              : h <= 100  ? 42
+              : h <= 260  ? 35
+              : h <= 700  ? 28
+              : h <= 1800 ? 22
+              : 17;
+  const topPad = Math.min(160, 30 + h / 30);
+  return { center: [d.lon, d.lat], zoom, pitch, duration: 1700, padding: { ...MAP_PAD_STORY, top: topPad } };
 }
 function flyToBuildingCamera(map, d) {
   (map || mapRef) && (map || mapRef).flyTo(buildingCamera(d));
+}
+
+// Neighborhood-level framing for the directory's drill-down. The metric
+// lenses' columns can run into the thousands of metres (see buildingCamera
+// above) - at a neighborhood's normal 14.3/pitch-60 framing, a cluster of
+// those tall spikes packed close together blows way past the frame, so the
+// non-footprint lenses back off ~1.5x (zoom -0.585) and flatten pitch a
+// little to keep the spikes' tops in view.
+function neighborhoodCamera(n) {
+  if (RENDER_MODE === 'footprints') return { center: [n.lon, n.lat], zoom: 14.3, pitch: 60 };
+  return { center: [n.lon, n.lat], zoom: 14.3 - 0.585, pitch: 55 };
 }
 
 // Flies the camera back to a building and shows its Story view - used by
@@ -876,7 +895,7 @@ function buildNbhdRow(boro, n) {
   const nNameEl = nRow.querySelector('.nbhd-name');
   nRow.onclick = (e) => {
     e.stopPropagation();
-    mapRef.flyTo({ center: [n.lon, n.lat], zoom: 14.3, pitch: 60, duration: 1800 });
+    mapRef.flyTo({ ...neighborhoodCamera(n), duration: 1800 });
     selectName(nNameEl);
     selectedBoro = boro;
     selectedNeighborhood = n.neighborhood;
@@ -924,7 +943,7 @@ function showNeighborhoodsView(boro, animate = true, highlightNeighborhood = nul
   if (mapRef) {
     const n = highlightNeighborhood && neighborhoodsRef.find(x => x.boro === boro && x.neighborhood === highlightNeighborhood);
     if (n) {
-      mapRef.flyTo({ center: [n.lon, n.lat], zoom: 14.3, pitch: 60, duration: 1800 });
+      mapRef.flyTo({ ...neighborhoodCamera(n), duration: 1800 });
     } else {
       const target = BORO_CENTERS[boro];
       if (target) mapRef.flyTo({ center: target.center, zoom: target.zoom, pitch: 55, duration: 1500 });
