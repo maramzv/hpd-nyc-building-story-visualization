@@ -587,18 +587,17 @@ def generate_narrative(p: BuildingProfile) -> str:
     # own branch used. A long_unresolved-specific variant here inevitably
     # re-says one of those facts in different words no matter how it's
     # phrased - that's what kept resurfacing as "yet another" duplicate.
-    # When the timeline dates are on hand and several violations are provably
-    # abandoned (deadline passed, nothing recorded for 2+ years - see
-    # _frozen_silent_years()), say so with the hard count - it's a sharper,
-    # more certain statement than "Gone quiet" and it subsumes the
-    # oldest-deadline sentence, so that one is skipped in this branch.
+    # Deadline-age and total-silence are different clocks (see
+    # _frozen_silent_years()) and can point at different violations, so
+    # they're stated as separate facts rather than one number qualifying
+    # the other.
+    if p.backlog_age in ("Long overdue", "Decades overdue"):
+        parts.append(f"The oldest open violation here is {p.max_years_overdue:.1f} years past its correction deadline.")
     if p.timeline_fields_present and p.frozen_overdue_count >= 2:
         parts.append(
-            f"{p.frozen_overdue_count} of these violations are frozen: the correction "
-            f"deadline passed and nothing has been recorded since, from the owner or the "
-            f"city. The longest has sat {int(p.frozen_years_max)} years."
+            f"In addition, {p.frozen_overdue_count} violations have sat frozen with no recorded "
+            f"activity in over two years: no filing from the owner, no follow-up from the city. "
+            f"The most neglected of these has had no update in {int(p.frozen_years_max)} years."
         )
-    elif p.backlog_age in ("Long overdue", "Decades overdue"):
-        parts.append(f"The oldest outstanding violation is {p.max_years_overdue:.1f} years past its correction deadline.")
 
     return " ".join(parts)

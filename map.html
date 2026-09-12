@@ -573,7 +573,21 @@ let currentRequestId = 0; // guards against a slow earlier click overwriting a n
 // so it's identifiable among many similarly-colored/sized neighbors.
 let selectedBuildingId = null;
 let selectedBuildingData = null; // full record - drives the search-bar selection UI + "View Story"
+// Building the cursor is currently over (not necessarily selected). Driven by
+// the invisible hit layers below, not the visible columns/footprints
+// themselves - see HIT_RADIUS_SCALE.
+let hoveredBuildingId = null;
+const HOVER_LINE_COLOR = [110, 226, 255, 235]; // cyan accent, distinct from the white click-selection outline
+const HOVER_LIFT = 1.08; // small height bump on the hovered column, on top of the outline/brighten
 let buildingLayers = [];
+// Same tiers as buildingLayers, one invisible ColumnLayer per tier with a
+// larger radius: a thin/short column is hard to land a cursor on exactly, so
+// hovering/clicking is picked off this wider (but invisible) target instead
+// of the real footprint. The visible layer is pickable:false so there's no
+// ambiguity between the two overlapping layers.
+let hitLayers = [];
+const HIT_RADIUS_SCALE = 1.8;
+const HIT_RADIUS_MIN_PIXELS = 10; // hover/click/cursor target floor at any zoom, see hitLayers below
 let mapRef = null;
 let neighborhoodsRef = null;
 
@@ -595,7 +609,7 @@ const LENSES = {
   // dwarfed the other lenses, so it's pinned to a fixed x/year multiplier
   // instead, chosen so the worst building (67.3yr, W 123rd St) tops out
   // around 3,158m.
-  age:        { label: 'Age',        hint: 'years since the oldest open violation',  metric: d => d.backlog_years, scale: 46.93 },
+  age:        { label: 'Age',        hint: 'years past deadline for the oldest open violation',  metric: d => d.backlog_years, scale: 46.93 },
   classc:     { label: 'Severity',   hint: 'Class C hazardous violations — the most severe kind', metric: d => d.class_c_count },
   recent:     { label: 'Recent',     hint: 'violations issued in the last 2 years',  metric: d => d.recent_count },
 };
@@ -777,12 +791,17 @@ let selectedBoro = null;
 let selectedNeighborhood = null;
 
 function refreshBuildingLayerStyling() {
-  const fillTrig = [selectedBoro, selectedNeighborhood, [...activePatterns].join(','), selectedBuildingId, RENDER_MODE];
+  const fillTrig = [selectedBoro, selectedNeighborhood, [...activePatterns].join(','), selectedBuildingId, hoveredBuildingId, RENDER_MODE];
   for (const layer of buildingLayers) {
-    layer.setProps({ updateTriggers: { getLineColor: selectedBuildingId, getFillColor: fillTrig, getElevation: RENDER_MODE } });
+    layer.setProps({ updateTriggers: {
+      getLineColor: [selectedBuildingId, hoveredBuildingId],
+      getLineWidth: hoveredBuildingId,
+      getFillColor: fillTrig,
+      getElevation: [RENDER_MODE, hoveredBuildingId],
+    } });
   }
   if (footprintLayer) {
-    footprintLayer.setProps({ updateTriggers: { getLineColor: selectedBuildingId, getFillColor: fillTrig } });
+    footprintLayer.setProps({ updateTriggers: { getLineColor: [selectedBuildingId, hoveredBuildingId], getFillColor: fillTrig } });
   }
 }
 
@@ -1693,7 +1712,7 @@ function buildDimDetail(key, profile, evidence, records) {
     meaning = 'Age of the single oldest missed repair deadline still on record.';
     observed = `The oldest missed deadline is ${profile.max_years_overdue.toFixed(1)} years past due.`;
     if (profile.timeline_fields_present && profile.frozen_overdue_count >= 2) {
-      observed += ` And it isn't just one — ${profile.frozen_overdue_count} open violations are past deadline with no change to the record since.`;
+      observed += ` In addition, ${profile.frozen_overdue_count} violations have sat frozen with no recorded activity in over two years: no filing from the owner, no follow-up from the city. The most neglected of these has had no update in ${Math.floor(profile.frozen_years_max)} years.`;
     }
     rows = evidence.slice(-1);
   }
@@ -2069,16 +2088,30 @@ Promise.all([
       showDetail(info.object);
       flyToBuildingCamera(map, info.object);
     };
-    const onHover = (info) => {
-      if (info.object) {
-        tooltip.style.display = 'block';
-        tooltip.style.left = (info.x + 14) + 'px';
-        tooltip.style.top = (info.y + 10) + 'px';
-        tooltip.innerHTML = `<div class="t-addr">${info.object.address}</div><div class="t-pattern">${lensTooltip(info.object)}</div>`;
-      } else {
-        tooltip.style.display = 'none';
-      }
-    };
+    // Shared by every pickable layer's onHover - takes a getter that pulls the
+    // building record off whatever info.object shape that layer produces
+    // (columns/hit layers hand back the record directly, footprints wrap it
+    // as {d, polygon}). Only touches layer styling when the hovered building
+    // actually changes, since onHover otherwise fires on every pointermove.
+    function makeHoverHandler(getD) {
+      return (info) => {
+        const d = info.object ? getD(info.object) : null;
+        const id = d ? d.buildingid : null;
+        if (id !== hoveredBuildingId) {
+          hoveredBuildingId = id;
+          refreshBuildingLayerStyling();
+        }
+        if (d) {
+          tooltip.style.display = 'block';
+          tooltip.style.left = (info.x + 14) + 'px';
+          tooltip.style.top = (info.y + 10) + 'px';
+          tooltip.innerHTML = `<div class="t-addr">${d.address}</div><div class="t-pattern">${lensTooltip(d)}</div>`;
+        } else {
+          tooltip.style.display = 'none';
+        }
+      };
+    }
+    const onHover = makeHoverHandler(d => d);
 
     // Rendering (and, more importantly, deck.gl's GPU picking readback) all
     // 167k columns at once is the root cause of the documented full-scale
@@ -2100,7 +2133,14 @@ Promise.all([
         : selectedBoro ? d.boro === selectedBoro
         : true;
       const inPatternFilter = activePatterns.has(d.pattern);
-      return [...rgb, (inSelection && inPatternFilter) ? 255 : 35];
+      const alpha = (inSelection && inPatternFilter) ? 255 : 35;
+      // Brighten (not recolor) on hover, so pattern colour still reads - only
+      // when the building is actually opaque, so a dimmed/filtered-out
+      // building hovered through doesn't pop back to full brightness.
+      if (alpha === 255 && d.buildingid === hoveredBuildingId) {
+        return [Math.min(255, rgb[0] + 45), Math.min(255, rgb[1] + 45), Math.min(255, rgb[2] + 45), alpha];
+      }
+      return [...rgb, alpha];
     }
 
     // ---- Footprints renderer: real polygons extruded to real roof height ----
@@ -2132,24 +2172,19 @@ Promise.all([
         getElevation: r => (r.d._fp.height_m > 3 ? r.d._fp.height_m : Math.max(r.d.floors || 3, 2) * 3.5),
         getFillColor: r => buildingFill(r.d),
         stroked: true,
-        getLineColor: r => r.d.buildingid === selectedBuildingId ? [255, 255, 255, 255] : [0, 0, 0, 0],
-        getLineWidth: 1,
+        getLineColor: r => r.d.buildingid === selectedBuildingId ? [255, 255, 255, 255]
+          : r.d.buildingid === hoveredBuildingId ? HOVER_LINE_COLOR
+          : [0, 0, 0, 0],
+        getLineWidth: r => r.d.buildingid === hoveredBuildingId ? 2.5 : 1,
         lineWidthUnits: 'pixels',
         lineWidthMinPixels: 2,
         updateTriggers: {
-          getLineColor: selectedBuildingId,
-          getFillColor: [selectedBoro, selectedNeighborhood, [...activePatterns].join(','), selectedBuildingId, RENDER_MODE],
+          getLineColor: [selectedBuildingId, hoveredBuildingId],
+          getLineWidth: hoveredBuildingId,
+          getFillColor: [selectedBoro, selectedNeighborhood, [...activePatterns].join(','), selectedBuildingId, hoveredBuildingId, RENDER_MODE],
         },
         onClick: (info) => { if (info.object) { showDetail(info.object.d); flyToBuildingCamera(map, info.object.d); } },
-        onHover: (info) => {
-          if (info.object) {
-            const d = info.object.d;
-            tooltip.style.display = 'block';
-            tooltip.style.left = (info.x + 14) + 'px';
-            tooltip.style.top = (info.y + 10) + 'px';
-            tooltip.innerHTML = `<div class="t-addr">${d.address}</div><div class="t-pattern">${lensTooltip(d)}</div>`;
-          } else { tooltip.style.display = 'none'; }
-        },
+        onHover: makeHoverHandler(obj => obj.d),
       });
     }
 
@@ -2167,10 +2202,23 @@ Promise.all([
         // with no matched real footprint - so nothing ever disappears.
         if (RENDER_MODE === 'footprints') vis = vis.filter(d => !d._fp);
         layer.setProps({ data: vis });
+        if (hitLayers[i]) hitLayers[i].setProps({ data: vis });
       });
       if (footprintLayer) footprintLayer.setProps({ data: footprintRowsInBounds(padded) });
     }
     window.__updateVisibleBuildings__ = updateVisibleBuildings;
+
+    // Column lenses: elevation is a bar chart of the active lens's metric
+    // (violations / backlog years / Class C / recent) - see lensMeters() for
+    // the transform. getElevation returns metres/elevationScale (8); lensMeters
+    // is the final-metre version the pin and camera use, so the three stay in
+    // sync. In footprints view these layers only draw the fallback (no real
+    // footprint) set, kept at height-by-floors so the Buildings view is
+    // unchanged. Shared by both the visible layer and its hit layer below so
+    // a hovered column's hit geometry always matches what's drawn.
+    function columnElevation(d) {
+      return RENDER_MODE === 'footprints' ? Math.max(d.floors, 2) : lensMeters(d) / 8;
+    }
 
     buildingLayers = sizeTiers.map((tier, i) => new deck.MapboxLayer({
       id: 'buildings-' + i,
@@ -2180,34 +2228,63 @@ Promise.all([
       angle: 45,
       radius: tier.radius,
       extruded: true,
-      pickable: true,
+      // Picking happens on the wider invisible hit layer below - a real
+      // footprint this size is often too thin/short to land a cursor on
+      // reliably, and having both layers pickable at once z-fights over
+      // which one wins the hit at the same screen position.
+      pickable: false,
       elevationScale: 8,
       material: { ambient: 0.35, diffuse: 0.65, shininess: 28, specularColor: [165, 165, 165] },
       getPosition: d => [d.lon, d.lat],
-      // Column lenses: elevation is a bar chart of the active lens's metric
-      // (violations / backlog years / Class C / recent) - see lensMeters() for
-      // the transform. getElevation returns metres/elevationScale (8); lensMeters
-      // is the final-metre version the pin and camera use, so the three stay in
-      // sync. Colour always means the recurrence pattern. In footprints view
-      // these layers only draw the fallback (no real footprint) set, kept at
-      // height-by-floors so the Buildings view is unchanged.
-      getElevation: d => RENDER_MODE === 'footprints'
-        ? Math.max(d.floors, 2)
-        : lensMeters(d) / 8,
+      getElevation: d => d.buildingid === hoveredBuildingId ? columnElevation(d) * HOVER_LIFT : columnElevation(d),
       getFillColor: d => buildingFill(d),
       stroked: true,
-      getLineColor: d => d.buildingid === selectedBuildingId ? [255, 255, 255, 255] : [0, 0, 0, 0],
-      getLineWidth: 1,
+      getLineColor: d => d.buildingid === selectedBuildingId ? [255, 255, 255, 255]
+        : d.buildingid === hoveredBuildingId ? HOVER_LINE_COLOR
+        : [0, 0, 0, 0],
+      getLineWidth: d => d.buildingid === hoveredBuildingId ? 2.5 : 1,
       lineWidthUnits: 'pixels',
       lineWidthMinPixels: 2,
       updateTriggers: {
-        getLineColor: selectedBuildingId,
-        getFillColor: [selectedBoro, selectedNeighborhood, [...activePatterns].join(','), selectedBuildingId, RENDER_MODE],
-        getElevation: RENDER_MODE,
+        getLineColor: [selectedBuildingId, hoveredBuildingId],
+        getLineWidth: hoveredBuildingId,
+        getFillColor: [selectedBoro, selectedNeighborhood, [...activePatterns].join(','), selectedBuildingId, hoveredBuildingId, RENDER_MODE],
+        getElevation: [RENDER_MODE, hoveredBuildingId],
       },
+    }));
+
+    // Invisible, wider hit-test twin of each tier above - same position and
+    // height, radius scaled up by HIT_RADIUS_SCALE. Owns all picking for
+    // columns so hover/click fire well before the cursor is exactly on the
+    // (often thin) visible column.
+    hitLayers = sizeTiers.map((tier, i) => new deck.MapboxLayer({
+      id: 'buildings-hit-' + i,
+      type: deck.ColumnLayer,
+      data: [],
+      diskResolution: 4,
+      angle: 45,
+      radius: tier.radius * HIT_RADIUS_SCALE,
+      // radius is in real-world metres, so at low zoom it shrinks to a
+      // sub-pixel target no matter how big HIT_RADIUS_SCALE is (measured:
+      // ~33px at zoom 18, ~2px at zoom 14, <1px at zoom 12). This floor keeps
+      // the hover/click/cursor target usable citywide, not just close-up.
+      radiusMinPixels: HIT_RADIUS_MIN_PIXELS,
+      extruded: true,
+      pickable: true,
+      elevationScale: 8,
+      getPosition: d => [d.lon, d.lat],
+      getElevation: columnElevation,
+      // Alpha 0 (fully transparent) gets fragment-discarded by ColumnLayer's
+      // shader before the picking pass ever runs, making the whole layer
+      // unpickable despite pickable:true - alpha 1 is visually indistinguishable
+      // from invisible but keeps the fragment (and picking) alive.
+      getFillColor: [0, 0, 0, 1],
+      updateTriggers: { getElevation: RENDER_MODE },
       onClick,
       onHover,
     }));
+    window.__hitLayers__ = hitLayers;   // temporary hook for automated testing
+    window.__buildingLayers__ = buildingLayers; // temporary hook for automated testing
 
     // ---- the lens picker ----
     function applyRenderMode(mode) {
@@ -2254,7 +2331,23 @@ Promise.all([
 
     map.on('load', () => {
       for (const layer of buildingLayers) map.addLayer(layer);
+      for (const layer of hitLayers) map.addLayer(layer);
       map.addLayer(selectionPinLayer);
+
+      // deck.gl's interleaved MapboxLayers all share one internal Deck
+      // instance (created lazily on the first addLayer above), which owns the
+      // canvas cursor itself - its default getCursor always returns
+      // 'grab'/'grabbing' regardless of what's under the pointer, re-applied
+      // on every pointer event, so setting canvas.style.cursor by hand from
+      // onHover gets silently overwritten a moment later. getCursor isn't a
+      // real MapboxLayer prop (only a top-level Deck one), so it has to be
+      // set on that shared instance directly via the same private `__deck`
+      // handle used elsewhere in this file for testing.
+      if (map.__deck) {
+        map.__deck.setProps({
+          getCursor: ({ isDragging, isHovering }) => isDragging ? 'grabbing' : isHovering ? 'pointer' : 'grab',
+        });
+      }
 
       // Real-footprint "Buildings" is the default lens; ?lens=columns|age|classc|
       // recent (or the older ?view=columns) opens another. If footprints.json

@@ -443,18 +443,18 @@ function generateNarrative(p) {
     parts.push(`Certification attempts have had mixed outcomes (${p.accepted_cert} accepted, ${p.rejected_cert} rejected).`);
   }
 
-  // When the timeline dates are on hand and several violations are provably
-  // abandoned (deadline passed, nothing recorded for 2+ years), say so with
-  // the hard count - see frozenSilentYears(). It subsumes the oldest-deadline
-  // sentence.
+  // Deadline-age and total-silence are different clocks (see frozenSilentYears())
+  // and can point at different violations, so they're stated as separate facts
+  // rather than one number qualifying the other.
+  if (p.backlog_age === "Long overdue" || p.backlog_age === "Decades overdue") {
+    parts.push(`The oldest open violation here is ${p.max_years_overdue.toFixed(1)} years past its correction deadline.`);
+  }
   if (p.timeline_fields_present && p.frozen_overdue_count >= 2) {
     parts.push(
-      `${p.frozen_overdue_count} of these violations are frozen: the correction ` +
-      `deadline passed and nothing has been recorded since, from the owner or the ` +
-      `city. The longest has sat ${Math.floor(p.frozen_years_max)} years.`
+      `In addition, ${p.frozen_overdue_count} violations have sat frozen with no recorded ` +
+      `activity in over two years: no filing from the owner, no follow-up from the city. ` +
+      `The most neglected of these has had no update in ${Math.floor(p.frozen_years_max)} years.`
     );
-  } else if (p.backlog_age === "Long overdue" || p.backlog_age === "Decades overdue") {
-    parts.push(`The oldest outstanding violation is ${p.max_years_overdue.toFixed(1)} years past its correction deadline.`);
   }
 
   return parts.join(" ");
