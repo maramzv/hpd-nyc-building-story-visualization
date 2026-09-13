@@ -409,7 +409,10 @@
   #site-nav .lp-explore-btn:hover { border-color: #40d8c8; box-shadow: 0 0 0 1px #40d8c8 inset; color: #fff; }
   /* Once inside the map, "Explore the map" is redundant - the logo is the
      way back out instead (see showLanding()). */
-  body.in-map #site-nav .lp-explore-btn { display: none; }
+  /* visibility, not display: none - keeps its layout box reserved so the
+     nav-links group to its left never shifts position between the landing
+     screen and the map view. */
+  body.in-map #site-nav .lp-explore-btn { visibility: hidden; pointer-events: none; }
 
   #landing {
     position: absolute; inset: 0; z-index: 100;
