@@ -8,13 +8,14 @@
 <script src="https://unpkg.com/deck.gl@8.9.35/dist.min.js"></script>
 <script src="src/building_story.js"></script>
 <style>
+  :root { --nav-h: 68px; }
   html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: #0b0e14; font-family: -apple-system, "Segoe UI", sans-serif; }
   #panel {
-    position: absolute; top: 16px; left: 16px; width: 320px;
+    position: absolute; top: calc(var(--nav-h) + 16px); left: 16px; width: 320px;
     background: rgba(18, 20, 28, 0.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     color: #e8eaf0; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);
     padding: 16px 18px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-    max-height: calc(100vh - 32px); overflow-y: auto;
+    max-height: calc(100vh - var(--nav-h) - 32px); overflow-y: auto;
     scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; /* Firefox */
     transition: width 0.32s ease;
   }
@@ -55,7 +56,6 @@
     background: #00b2a9;
   }
   #evidence-table, #search-results { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
-  #panel h1 { font-size: 16px; margin: 0 0 4px 0; }
   #panel .sub { font-size: 12px; color: #9aa1b2; margin-bottom: 14px; }
   #legend { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
   #legend .row {
@@ -346,7 +346,7 @@
   .ev-row .ev-meta { color: #8a91a0; font-size: 10px; line-height: 1.5; margin-top: 4px; }
   #evidence-more { font-size: 10.5px; color: #666c7c; padding-top: 6px; text-align: center; }
   #d-buildingid { font-size: 10.5px; color: #666c7c; margin-top: 12px; text-align: center; }
-  #status { position: absolute; bottom: 34px; right: 8px; color: #9aa1b2; font-size: 11px; background: rgba(20,22,30,0.8); padding: 6px 10px; border-radius: 6px; z-index: 2; text-align: right; }
+  #status { position: absolute; bottom: 34px; right: 8px; color: #c7cbd6; font-size: 12px; font-weight: 500; background: rgba(20,22,30,0.9); border: 1px solid rgba(255,255,255,0.08); padding: 7px 12px; border-radius: 6px; z-index: 2; text-align: right; }
   #status .status-credit { display: block; margin-top: 3px; font-size: 9.5px; color: #666c7c; line-height: 1.35; }
   #status .status-credit a { color: #767c8c; }
   #status .status-credit a:hover { color: #9aa1b2; }
@@ -368,6 +368,41 @@
   .nbhd-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: #1a1d27; }
   .nbhd-bar div { height: 100%; }
 
+  /* Persistent top bar - lives outside #landing so it survives entering the
+     map (see enterFromLanding/showLanding), unlike the rest of the landing
+     screen. Same visual language the landing hero used to own alone. */
+  #site-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+    display: flex; align-items: center; padding: 16px 40px; flex-wrap: wrap; gap: 14px;
+    height: var(--nav-h);
+    background: none; pointer-events: none;
+    box-sizing: border-box;
+  }
+  /* The bar itself is a transparent pass-through so the map/hero shows
+     through everywhere except the interactive pieces. */
+  #site-nav .lp-brand, #site-nav .lp-nav-right { pointer-events: auto; }
+  #site-nav * { box-sizing: border-box; }
+  #site-nav .lp-brand {
+    display: flex; align-items: center; gap: 12px;
+    background: none; border: none; padding: 0; cursor: pointer; font: inherit; color: #e8eaf0;
+  }
+  #site-nav .lp-brand svg { display: block; flex-shrink: 0; }
+  #site-nav .lp-brand .lp-name { font-size: 16px; font-weight: 700; letter-spacing: 0.01em; }
+  #site-nav .lp-nav-right { display: flex; align-items: center; gap: 28px; margin-left: auto; }
+  #site-nav .lp-nav-links { display: flex; align-items: center; gap: 28px; }
+  #site-nav .lp-nav-links a { color: #dfe2ea; text-decoration: none; font-size: 14px; opacity: 0.85; }
+  #site-nav .lp-nav-links a:hover { opacity: 1; }
+  #site-nav .lp-explore-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; color: #e8eaf0;
+    border: 1px solid rgba(255,255,255,0.55); border-radius: 999px;
+    padding: 10px 18px; font-size: 14px; font-weight: 500; cursor: pointer;
+  }
+  #site-nav .lp-explore-btn:hover { border-color: #fff; }
+  /* Once inside the map, "Explore the map" is redundant - the logo is the
+     way back out instead (see showLanding()). */
+  body.in-map #site-nav .lp-explore-btn { display: none; }
+
   #landing {
     position: absolute; inset: 0; z-index: 100;
     display: flex; flex-direction: column;
@@ -376,28 +411,10 @@
       linear-gradient(90deg, rgba(4,6,10,0.75) 0%, rgba(4,6,10,0.45) 30%, rgba(4,6,10,0.05) 55%, rgba(4,6,10,0) 75%),
       url("assets/landing-bg.png") center right / cover no-repeat;
   }
-  #landing.hidden { display: none; }
+  #landing.hidden, body.in-map #landing { display: none; }
   #landing * { box-sizing: border-box; }
 
-  #landing .lp-nav {
-    display: flex; align-items: center; padding: 22px 40px; flex-wrap: wrap; gap: 14px;
-  }
-  #landing .lp-brand { display: flex; align-items: center; gap: 12px; }
-  #landing .lp-brand svg { display: block; flex-shrink: 0; }
-  #landing .lp-brand .lp-name { font-size: 16px; font-weight: 700; letter-spacing: 0.01em; }
-  #landing .lp-nav-right { display: flex; align-items: center; gap: 28px; margin-left: auto; }
-  #landing .lp-nav-links { display: flex; align-items: center; gap: 28px; }
-  #landing .lp-nav-links a { color: #dfe2ea; text-decoration: none; font-size: 14px; opacity: 0.85; }
-  #landing .lp-nav-links a:hover { opacity: 1; }
-  #landing .lp-explore-btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: transparent; color: #e8eaf0;
-    border: 1px solid rgba(255,255,255,0.55); border-radius: 999px;
-    padding: 10px 18px; font-size: 14px; font-weight: 500; cursor: pointer;
-  }
-  #landing .lp-explore-btn:hover { border-color: #fff; }
-
-  #landing .lp-main { flex: 1; display: flex; align-items: center; padding: 20px 40px 60px; }
+  #landing .lp-main { flex: 1; display: flex; align-items: center; padding: calc(var(--nav-h) + 20px) 40px 60px; }
   #landing .lp-hero { max-width: 720px; }
   #landing .lp-eyebrow {
     font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
@@ -473,9 +490,9 @@
   #landing .lp-stat .lp-desc { font-size: 12px; color: #8b91a0; line-height: 1.4; margin-top: 6px; }
 
   @media (max-width: 720px) {
-    #landing .lp-nav { padding: 18px 20px; }
-    #landing .lp-nav-links { display: none; }
-    #landing .lp-main { padding: 10px 20px 40px; }
+    #site-nav { padding: 12px 20px; }
+    #site-nav .lp-nav-links { display: none; }
+    #landing .lp-main { padding: calc(var(--nav-h) + 10px) 20px 40px; }
     #landing h1 { font-size: 32px; }
   }
 
@@ -507,12 +524,47 @@
     box-shadow: 0 6px 20px rgba(0,0,0,0.4);
   }
   #lens-hint:empty { display: none; }
+
+  /* MapLibre's own zoom control defaults to the map container's top edge,
+     which now sits under #site-nav. */
+  .maplibregl-ctrl-top-right { top: calc(var(--nav-h) + 10px) !important; }
 </style>
 </head>
 <body>
+<script>
+  // Synchronous, runs before #landing is even parsed - so a page load that
+  // arrives via ?explore=1 or ?cam=... (the info pages' "Explore the map"
+  // link, or a shared deep link) never paints the landing screen at all,
+  // instead of hiding it a few seconds later once data.length is ready.
+  // Clicking "Explore the map" *from* the landing screen doesn't need this:
+  // that's the same document, already loaded, no navigation happens.
+  (function () {
+    var qs = new URLSearchParams(location.search);
+    if (qs.get('explore') || qs.get('cam')) document.body.classList.add('in-map');
+  })();
+</script>
+<nav id="site-nav">
+  <button class="lp-brand" id="brand-home-btn" aria-label="Back to home">
+    <svg width="34" height="26" viewBox="0 0 34 26" fill="none">
+      <rect x="0" y="14" width="4.5" height="12" fill="rgb(220,70,60)"/>
+      <rect x="7.5" y="6" width="4.5" height="20" fill="rgb(230,180,60)"/>
+      <rect x="15" y="10" width="4.5" height="16" fill="rgb(64,216,200)"/>
+      <rect x="22.5" y="2" width="4.5" height="24" fill="rgb(66,133,224)"/>
+      <rect x="30" y="17" width="4" height="9" fill="rgb(80,170,70)"/>
+    </svg>
+    <div class="lp-name">NYC Building Stories</div>
+  </button>
+  <div class="lp-nav-right">
+    <div class="lp-nav-links">
+      <a href="about.html">About</a>
+      <a href="data.html">Data</a>
+      <a href="methodology.html">Methodology</a>
+    </div>
+    <button class="lp-explore-btn" id="landing-enter">Explore the map &rarr;</button>
+  </div>
+</nav>
 <div id="map"></div>
 <div id="panel">
-  <h1 id="panel-title">NYC Building Stories</h1>
   <div class="sub">Explore the map, click a building for details, or search an address.</div>
   <div id="legend"></div>
 
@@ -580,27 +632,6 @@
 </div>
 
 <div id="landing">
-  <nav class="lp-nav">
-    <div class="lp-brand">
-      <svg width="34" height="26" viewBox="0 0 34 26" fill="none">
-        <rect x="0" y="14" width="4.5" height="12" fill="rgb(220,70,60)"/>
-        <rect x="7.5" y="6" width="4.5" height="20" fill="rgb(230,180,60)"/>
-        <rect x="15" y="10" width="4.5" height="16" fill="rgb(64,216,200)"/>
-        <rect x="22.5" y="2" width="4.5" height="24" fill="rgb(66,133,224)"/>
-        <rect x="30" y="17" width="4" height="9" fill="rgb(80,170,70)"/>
-      </svg>
-      <div class="lp-name">NYC Building Stories</div>
-    </div>
-    <div class="lp-nav-right">
-      <div class="lp-nav-links">
-        <a href="about.html">About</a>
-        <a href="data.html">Data</a>
-        <a href="methodology.html">Methodology</a>
-      </div>
-      <button class="lp-explore-btn" id="landing-enter">Explore the map &rarr;</button>
-    </div>
-  </nav>
-
   <main class="lp-main">
     <div class="lp-hero">
       <div class="lp-eyebrow">
@@ -1987,11 +2018,6 @@ const BORO_CENTERS = {
 };
 const PATTERN_ORDER = ["No real defects", "Isolated", "Widespread", "Persistent", "Chronic"];
 
-function renderSummary(data) {
-  document.getElementById('panel-title').textContent =
-    `NYC Building Stories — ${data.length.toLocaleString()} buildings analyzed`;
-}
-
 function patternBar(counts, total) {
   return PATTERN_ORDER.map(p => {
     const pct = total ? (counts[p] || 0) / total * 100 : 0;
@@ -2069,6 +2095,15 @@ function renderLanding(data) {
 // so whatever comes next (a cinematic entrance or a direct flyTo) reads clean.
 function enterFromLanding() {
   document.getElementById('landing').classList.add('hidden');
+  document.body.classList.add('in-map');
+}
+
+// The other direction, wired to the persistent #site-nav logo - the map
+// itself stays exactly as it was underneath, same as a browser tab you
+// switch back to.
+function showLanding() {
+  document.getElementById('landing').classList.remove('hidden');
+  document.body.classList.remove('in-map');
 }
 
 function renderSearch(data, map) {
@@ -2229,9 +2264,8 @@ Promise.all([
     }
     window.__TEST_DATA__ = data; // temporary hook for automated testing
     document.getElementById('status').innerHTML =
-      `${data.length.toLocaleString()} buildings loaded` +
+      `${data.length.toLocaleString()} buildings loaded and analyzed` +
       `<span class="status-credit">Data: <a href="https://data.cityofnewyork.us/Housing-Development/Open-HPD-Violations/csn4-vhvf/about_data" target="_blank" rel="noopener">NYC HPD Open Violations</a> &middot; refreshed Sep 1, 2026</span>`;
-    renderSummary(data);
     renderLanding(data);
 
     const map = new maplibregl.Map({
@@ -2253,6 +2287,7 @@ Promise.all([
       enterFromLanding();
       flyInFromStart();
     };
+    document.getElementById('brand-home-btn').onclick = showLanding;
 
     // Landing search: same live-autocomplete behavior as the directory panel's
     // #search-box (renderSearch, below), just against its own dropdown so it
@@ -2570,11 +2605,17 @@ Promise.all([
       // recent (or the older ?view=columns) opens another. If footprints.json
       // failed to load, fall back to the Violations lens.
       //   ?cam=lng,lat,zoom,pitch,bearing   jump the camera + skip the fly-in
+      //   ?explore=1                        skip the landing screen, same as clicking "Explore the map"
+      //   (used by the site nav's Explore button on about/data/methodology.html)
       const qs = new URLSearchParams(location.search);
       if (qs.get('cam')) {
         document.getElementById('landing').classList.add('hidden');
+        document.body.classList.add('in-map');
         const [lng, lat, zoom, pitch, bearing] = qs.get('cam').split(',').map(Number);
         map.jumpTo({ center: [lng, lat], zoom, pitch: pitch || 0, bearing: bearing || 0 });
+      } else if (qs.get('explore')) {
+        enterFromLanding();
+        flyInFromStart();
       }
       const wantLens = qs.get('lens') || qs.get('view');
       const haveFp = Object.keys(FOOTPRINTS_BY_ID).length > 0;
