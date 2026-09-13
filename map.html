@@ -2039,7 +2039,7 @@ function renderLanding(data) {
   for (const d of data) counts[d.pattern] = (counts[d.pattern] || 0) + 1;
 
   document.getElementById('landing-stats-label').textContent =
-    `Citywide pattern, all ${data.length.toLocaleString()} buildings:`;
+    `Citywide pattern, ${data.length.toLocaleString()} buildings analyzed:`;
   document.getElementById('landing-stats').innerHTML = PATTERN_ORDER.map(p => `
     <div class="lp-stat">
       <div class="lp-num" style="color: rgb(${PATTERN_COLORS[p].join(',')})">${((counts[p]/data.length)*100).toFixed(1)}%</div>
