@@ -32,8 +32,8 @@ TEST_BUILDING_IDS = [
     "49694", "842723", "8623",                            # extreme severity / extreme backlog
     "9835", "133539", "8228", "285601", "300043",         # Widespread (9+ real defects, no recurring signature)
     "805595",                                              # Isolated with administrative filings mixed in
-    "324815",                                              # Widespread, long_unresolved (Engagement/Backlog overlap)
-    "520214",                                              # Isolated, long_unresolved w/ non-compliance flag set
+    "324815",                                              # Widespread, Gone-quiet/Unaddressed/Decades-overdue overlap
+    "520214",                                              # Isolated, same overlap w/ non-compliance flag set
 ]
 
 

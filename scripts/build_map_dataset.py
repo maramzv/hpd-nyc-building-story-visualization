@@ -300,7 +300,6 @@ def main():
             "active_count": p.active_count,
             "scale": p.scale,
             "pattern": p.pattern,
-            "long_unresolved": p.long_unresolved,
         })
 
     out_path = DATA_DIR / "map_dataset.json"

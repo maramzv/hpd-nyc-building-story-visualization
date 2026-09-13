@@ -205,7 +205,6 @@ class BuildingProfile:
     engagement: str = ""
     pattern: str = ""
     backlog_age: str = ""
-    long_unresolved: bool = False
 
 
 def _level_scale(n):
@@ -458,16 +457,6 @@ def build_profile(buildingid: str, violations: list[dict], today: datetime) -> B
     p.engagement = _level_engagement(p.accepted_cert, p.rejected_cert, p.max_days_overdue)
     p.pattern = _level_pattern(p.n_persistent_sigs, p.n_chronic_sigs, p.real_defect_count)
     p.backlog_age = _level_backlog(p.max_days_overdue)
-    # Independent of pattern (recurrence): true when nobody has ever engaged
-    # with the violation, nothing's happened lately, and it's been overdue
-    # for 9.7+ years. Deliberately not folded into `pattern` - it can be true
-    # alongside Chronic/Persistent just as easily as Isolated (the same
-    # recurring defect can also be one nobody's ever certified or revisited).
-    p.long_unresolved = (
-        p.recency == "Gone quiet"
-        and p.engagement in ("Unaddressed", "Too early to tell")
-        and p.backlog_age in ("Long overdue", "Decades overdue")
-    )
     return p
 
 
@@ -580,13 +569,12 @@ def generate_narrative(p: BuildingProfile) -> str:
     elif p.engagement == "Mixed engagement":
         parts.append(f"Certification attempts have had mixed outcomes ({p.accepted_cert} accepted, {p.rejected_cert} rejected).")
 
-    # Backlog age. Deliberately one sentence regardless of long_unresolved -
-    # that flag requires Gone-quiet recency and Unaddressed engagement by
-    # definition, both of which the opener and Engagement sentence above
-    # have *already* stated by the time this runs, in whatever wording their
-    # own branch used. A long_unresolved-specific variant here inevitably
-    # re-says one of those facts in different words no matter how it's
-    # phrased - that's what kept resurfacing as "yet another" duplicate.
+    # Backlog age. Deliberately one sentence: Gone-quiet recency and
+    # Unaddressed engagement are already stated by the opener and Engagement
+    # sentence above, in whatever wording their own branch used, so a
+    # backlog-specific variant here inevitably re-says one of those facts in
+    # different words no matter how it's phrased - that's what kept
+    # resurfacing as "yet another" duplicate.
     # Deadline-age and total-silence are different clocks (see
     # _frozen_silent_years()) and can point at different violations, so
     # they're stated as separate facts rather than one number qualifying

@@ -1,5 +1,5 @@
 """Fast path for re-running just the story-profile logic (pattern, narrative,
-backlog_age, long_unresolved, etc.) over the existing map_dataset.json,
+backlog_age, etc.) over the existing map_dataset.json,
 without redoing the PLUTO join (lat/lon/floors/footprint) that
 build_map_dataset.py always repeats from scratch.
 
@@ -52,7 +52,7 @@ def main():
         b["active_count"] = p.active_count
         b["scale"] = p.scale
         b["pattern"] = p.pattern
-        b["long_unresolved"] = p.long_unresolved
+        b.pop("long_unresolved", None)
         b.pop("recency", None)
         b.pop("severity", None)
         b.pop("engagement", None)

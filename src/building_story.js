@@ -329,13 +329,6 @@ function buildProfile(buildingid, violations, today) {
   p.engagement = levelEngagement(p.accepted_cert, p.rejected_cert, p.max_days_overdue);
   p.pattern = levelPattern(p.n_persistent_sigs, p.n_chronic_sigs, p.real_defect_count);
   p.backlog_age = levelBacklog(p.max_days_overdue);
-  // Independent of pattern (recurrence) - see the matching comment in
-  // building_story.py for why this isn't folded into levelPattern().
-  p.long_unresolved = (
-    p.recency === "Gone quiet" &&
-    (p.engagement === "Unaddressed" || p.engagement === "Too early to tell") &&
-    (p.backlog_age === "Long overdue" || p.backlog_age === "Decades overdue")
-  );
   return p;
 }
 
