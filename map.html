@@ -369,24 +369,115 @@
   .nbhd-bar div { height: 100%; }
 
   #landing {
-    position: absolute; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
-    background: radial-gradient(ellipse at center, #161a24 0%, #0b0e14 100%);
+    position: absolute; inset: 0; z-index: 100;
+    display: flex; flex-direction: column;
+    color: #e8eaf0;
+    background:
+      linear-gradient(90deg, rgba(4,6,10,0.75) 0%, rgba(4,6,10,0.45) 30%, rgba(4,6,10,0.05) 55%, rgba(4,6,10,0) 75%),
+      url("assets/landing-bg.png") center right / cover no-repeat;
   }
-  #landing .content { max-width: 560px; text-align: center; padding: 0 24px; color: #e8eaf0; }
-  #landing h1 { font-size: 34px; margin: 0 0 12px 0; font-weight: 700; letter-spacing: -0.01em; }
-  #landing .tagline { font-size: 15px; color: #9aa1b2; margin-bottom: 28px; line-height: 1.6; }
-  #landing .stats { display: flex; justify-content: center; gap: 28px; margin-bottom: 32px; }
-  #landing .stat .num { font-size: 26px; font-weight: 700; }
-  #landing .stat .lbl { font-size: 11px; color: #8a90a0; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 3px; }
-  #landing .legend-row { display: flex; justify-content: center; gap: 18px; margin-bottom: 32px; font-size: 12px; color: #b0b4c2; }
-  #landing .legend-row .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
-  #landing button {
-    background: #e8eaf0; color: #0b0e14; border: none; padding: 13px 32px; border-radius: 8px;
-    font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.15s, opacity 0.15s;
-  }
-  #landing button:hover { transform: translateY(-1px); opacity: 0.9; }
-  #landing .hint { font-size: 11px; color: #666c7c; margin-top: 14px; }
   #landing.hidden { display: none; }
+  #landing * { box-sizing: border-box; }
+
+  #landing .lp-nav {
+    display: flex; align-items: center; padding: 22px 40px; flex-wrap: wrap; gap: 14px;
+  }
+  #landing .lp-brand { display: flex; align-items: center; gap: 12px; }
+  #landing .lp-brand svg { display: block; flex-shrink: 0; }
+  #landing .lp-brand .lp-name { font-size: 16px; font-weight: 700; letter-spacing: 0.01em; }
+  #landing .lp-nav-right { display: flex; align-items: center; gap: 28px; margin-left: auto; }
+  #landing .lp-nav-links { display: flex; align-items: center; gap: 28px; }
+  #landing .lp-nav-links a { color: #dfe2ea; text-decoration: none; font-size: 14px; opacity: 0.85; }
+  #landing .lp-nav-links a:hover { opacity: 1; }
+  #landing .lp-explore-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; color: #e8eaf0;
+    border: 1px solid rgba(255,255,255,0.55); border-radius: 999px;
+    padding: 10px 18px; font-size: 14px; font-weight: 500; cursor: pointer;
+  }
+  #landing .lp-explore-btn:hover { border-color: #fff; }
+
+  #landing .lp-main { flex: 1; display: flex; align-items: center; padding: 20px 40px 60px; }
+  #landing .lp-hero { max-width: 720px; }
+  #landing .lp-eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 18px;
+  }
+  #landing .lp-eyebrow .lp-arrow { color: #6b7186; font-weight: 400; }
+  #landing h1 {
+    font-size: 44px; line-height: 1.12; font-weight: 700;
+    letter-spacing: -0.015em; margin: 0 0 18px 0;
+  }
+  #landing h1 .lp-hl { color: #40d8c8; }
+  #landing .lp-lede { font-size: 15.5px; line-height: 1.65; color: #c3c7d3; max-width: 520px; margin: 0 0 28px 0; }
+
+  #landing .lp-search-wrap { position: relative; max-width: 460px; margin-bottom: 34px; }
+  #landing .lp-search {
+    display: flex; align-items: center;
+    background: rgba(20,23,32,0.75);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 999px; padding: 6px 6px 6px 20px;
+    backdrop-filter: blur(6px);
+  }
+  #landing .lp-search-results {
+    display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 6px; z-index: 5;
+    background: #14161e; border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: 114px; overflow-y: auto;
+  }
+  #landing .lp-search-results.open { display: block; }
+  #landing .lp-search-results { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
+  #landing .lp-search-results::-webkit-scrollbar { width: 6px; }
+  #landing .lp-search-results::-webkit-scrollbar-track { background: transparent; }
+  #landing .lp-search-results::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+  #landing .lp-search-results::-webkit-scrollbar-thumb:hover { background: #40d8c8; }
+  #landing .lp-search-result {
+    padding: 10px 16px; font-size: 13px; cursor: pointer;
+    display: flex; justify-content: space-between; gap: 10px;
+  }
+  #landing .lp-search-result:hover { background: rgba(255,255,255,0.06); }
+  #landing .lp-search-result span:first-child { color: #d0d3dd; }
+  #landing .lp-search input {
+    flex: 1; background: none; border: none; outline: none;
+    color: #e8eaf0; font-size: 14px; padding: 8px 0;
+    font-family: inherit;
+  }
+  #landing .lp-search input::placeholder { color: #7d8395; }
+  #landing .lp-search button {
+    width: 36px; height: 36px; border-radius: 50%; border: none;
+    background: #40d8c8; color: #06141a;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+  }
+  #landing .lp-search button:hover { opacity: 0.9; }
+
+  #landing .lp-boro-label { font-size: 12px; color: #9aa1b2; margin-bottom: 12px; }
+  #landing .lp-boro-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px; }
+  #landing .lp-boro-row button {
+    background: transparent; color: #e8eaf0;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 999px; padding: 9px 18px; font-size: 13px; cursor: pointer;
+    font-family: inherit;
+  }
+  #landing .lp-boro-row button:hover { border-color: rgba(255,255,255,0.55); }
+  #landing .lp-boro-row button.active { border-color: #40d8c8; box-shadow: 0 0 0 1px #40d8c8 inset; color: #fff; }
+
+  #landing .lp-stats-label { font-size: 11px; color: #9aa1b2; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+  #landing .lp-stats { display: flex; gap: 22px; flex-wrap: wrap; }
+  #landing .lp-stat {
+    flex: 1 1 118px; max-width: 142px; padding-left: 22px;
+    border-left: 1px solid rgba(255,255,255,0.18);
+  }
+  #landing .lp-stat:first-child { padding-left: 0; border-left: none; }
+  #landing .lp-stat .lp-num { font-size: 27px; font-weight: 700; line-height: 1.1; }
+  #landing .lp-stat .lp-lbl { font-size: 10.5px; color: #e8eaf0; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 8px; font-weight: 700; }
+  #landing .lp-stat .lp-desc { font-size: 12px; color: #8b91a0; line-height: 1.4; margin-top: 6px; }
+
+  @media (max-width: 720px) {
+    #landing .lp-nav { padding: 18px 20px; }
+    #landing .lp-nav-links { display: none; }
+    #landing .lp-main { padding: 10px 20px 40px; }
+    #landing h1 { font-size: 32px; }
+  }
 
   /* Lens picker: one segmented control, bottom-centre. 'Buildings' draws real
      footprint geometry; the rest are square columns whose height encodes a
@@ -489,14 +580,67 @@
 </div>
 
 <div id="landing">
-  <div class="content">
-    <h1>What is happening to NYC's buildings?</h1>
-    <div class="tagline">Every colored column is a real NYC building with at least one open housing violation on record. Explore the stories hidden in the city's housing records — from the citywide pattern down to a single address.</div>
-    <div class="stats" id="landing-stats"></div>
-    <div class="legend-row" id="landing-legend"></div>
-    <button id="landing-enter">Explore the map</button>
-    <div class="hint">Click a borough, then a neighborhood, then a building — or just fly around.</div>
-  </div>
+  <nav class="lp-nav">
+    <div class="lp-brand">
+      <svg width="34" height="26" viewBox="0 0 34 26" fill="none">
+        <rect x="0" y="14" width="4.5" height="12" fill="rgb(220,70,60)"/>
+        <rect x="7.5" y="6" width="4.5" height="20" fill="rgb(230,180,60)"/>
+        <rect x="15" y="10" width="4.5" height="16" fill="rgb(64,216,200)"/>
+        <rect x="22.5" y="2" width="4.5" height="24" fill="rgb(66,133,224)"/>
+        <rect x="30" y="17" width="4" height="9" fill="rgb(80,170,70)"/>
+      </svg>
+      <div class="lp-name">NYC Building Stories</div>
+    </div>
+    <div class="lp-nav-right">
+      <div class="lp-nav-links">
+        <a href="#">About</a>
+        <a href="#">Data</a>
+        <a href="#">Methodology</a>
+      </div>
+      <button class="lp-explore-btn" id="landing-enter">Explore the map &rarr;</button>
+    </div>
+  </nav>
+
+  <main class="lp-main">
+    <div class="lp-hero">
+      <div class="lp-eyebrow">
+        <span style="color: rgb(64,216,200)">Citywide</span> <span class="lp-arrow">&rsaquo;</span>
+        <span style="color: rgb(66,133,224)">Borough</span> <span class="lp-arrow">&rsaquo;</span>
+        <span style="color: rgb(230,180,60)">Neighborhood</span> <span class="lp-arrow">&rsaquo;</span>
+        <span style="color: rgb(220,70,60)">Building</span>
+      </div>
+      <h1>What is happening<br>to <span class="lp-hl">NYC's buildings?</span></h1>
+      <p class="lp-lede">
+        Every colored column is a real NYC building with at least one open
+        housing violation on record. Explore the stories hidden in the city's
+        housing records, from the citywide pattern down to a single address.
+      </p>
+
+      <div class="lp-search-wrap">
+        <div class="lp-search">
+          <input type="text" placeholder="Search an address or building..." id="landing-search-box" autocomplete="off">
+          <button aria-label="Search" id="landing-search-go">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </button>
+        </div>
+        <div class="lp-search-results" id="landing-search-results"></div>
+      </div>
+
+      <div class="lp-boro-label">Or explore by borough:</div>
+      <div class="lp-boro-row" id="landing-boro-row">
+        <button data-boro="MANHATTAN" class="active">Manhattan</button>
+        <button data-boro="BROOKLYN">Brooklyn</button>
+        <button data-boro="QUEENS">Queens</button>
+        <button data-boro="BRONX">Bronx</button>
+        <button data-boro="STATEN ISLAND">Staten Island</button>
+      </div>
+
+      <div class="lp-stats-label" id="landing-stats-label">Loading citywide pattern&hellip;</div>
+      <div class="lp-stats" id="landing-stats"></div>
+    </div>
+  </main>
 </div>
 
 <script>
@@ -523,6 +667,14 @@ const PATTERN_DETAILS = {
   "Widespread": "This building has many real physical defects on record — more than the large majority of buildings with no repeating pattern — but none of them has ever been cited a second time.",
   "Persistent": "The same specific defect has been cited 3 or more times over at least 2 years — it kept coming back after being flagged.",
   "Chronic": "The same specific defect has been cited 10 or more times over at least 5 years — a problem that's gone unresolved for the better part of a decade.",
+};
+// One-line versions of PATTERN_DETAILS for the landing screen's compact stat cards.
+const PATTERN_SHORT_DESC = {
+  "No real defects": "Administrative filings only.",
+  "Isolated": "A few real defects, none repeated.",
+  "Widespread": "Many real defects, none repeated.",
+  "Persistent": "The same defect, repeated 3+ times.",
+  "Chronic": "The same defect, repeated for years.",
 };
 
 // All patterns are "active" (shown at full opacity) by default. Clicking a
@@ -1885,14 +2037,38 @@ function renderBoroughs(data, neighborhoods, map) {
 function renderLanding(data) {
   const counts = { "No real defects": 0, Isolated: 0, Widespread: 0, Persistent: 0, Chronic: 0 };
   for (const d of data) counts[d.pattern] = (counts[d.pattern] || 0) + 1;
+
+  document.getElementById('landing-stats-label').textContent =
+    `Citywide pattern, all ${data.length.toLocaleString()} buildings:`;
   document.getElementById('landing-stats').innerHTML = PATTERN_ORDER.map(p => `
-    <div class="stat">
-      <div class="num" style="color: rgb(${PATTERN_COLORS[p].join(',')})">${((counts[p]/data.length)*100).toFixed(1)}%</div>
-      <div class="lbl">${p}</div>
+    <div class="lp-stat">
+      <div class="lp-num" style="color: rgb(${PATTERN_COLORS[p].join(',')})">${((counts[p]/data.length)*100).toFixed(1)}%</div>
+      <div class="lp-lbl">${p}</div>
+      <div class="lp-desc">${PATTERN_SHORT_DESC[p]}</div>
     </div>`).join('');
-  document.getElementById('landing-legend').innerHTML = PATTERN_ORDER.map(p =>
-    `<span><span class="sw" style="background: rgb(${PATTERN_COLORS[p].join(',')})"></span>${PATTERN_LABELS[p]}</span>`
-  ).join('');
+
+  // Borough pills are static markup (don't need data to render); just wire
+  // their clicks here now that showNeighborhoodsView/selectName are in scope.
+  const boroRow = document.getElementById('landing-boro-row');
+  boroRow.querySelectorAll('button').forEach(btn => {
+    btn.onclick = () => {
+      boroRow.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      enterFromLanding();
+      const boro = btn.dataset.boro;
+      const boroNameEl = Array.from(document.querySelectorAll('#boroughs .boro-name'))
+        .find(el => el.querySelector('span').textContent.toUpperCase() === boro);
+      if (boroNameEl) selectName(boroNameEl);
+      showNeighborhoodsView(boro);
+    };
+  });
+}
+
+// Shared by "Explore the map", the borough pills, and the landing search box -
+// dismisses the landing screen and resets the camera to the pre-flyover start
+// so whatever comes next (a cinematic entrance or a direct flyTo) reads clean.
+function enterFromLanding() {
+  document.getElementById('landing').classList.add('hidden');
 }
 
 function renderSearch(data, map) {
@@ -2074,9 +2250,50 @@ Promise.all([
     renderSearch(data, map);
 
     document.getElementById('landing-enter').onclick = () => {
-      document.getElementById('landing').classList.add('hidden');
+      enterFromLanding();
       flyInFromStart();
     };
+
+    // Landing search: same live-autocomplete behavior as the directory panel's
+    // #search-box (renderSearch, below), just against its own dropdown so it
+    // works while the landing screen is still up.
+    const landingSearchBox = document.getElementById('landing-search-box');
+    const landingSearchResults = document.getElementById('landing-search-results');
+
+    function landingSelectMatch(m) {
+      enterFromLanding();
+      showDetail(m);
+      flyToBuildingCamera(map, m);
+      landingSearchResults.classList.remove('open');
+      landingSearchBox.value = m.address;
+    }
+
+    landingSearchBox.addEventListener('input', () => {
+      const q = landingSearchBox.value.trim().toUpperCase();
+      landingSearchResults.innerHTML = '';
+      if (q.length < 3) { landingSearchResults.classList.remove('open'); return; }
+      const matches = data.filter(d => d.address.toUpperCase().includes(q)).slice(0, 8);
+      if (!matches.length) { landingSearchResults.classList.remove('open'); return; }
+      landingSearchResults.classList.add('open');
+      for (const m of matches) {
+        const row = document.createElement('div');
+        row.className = 'lp-search-result';
+        row.innerHTML = `<span>${m.address}</span><span style="color: rgb(${PATTERN_COLORS[m.pattern].join(',')})">${m.pattern}</span>`;
+        row.onclick = () => landingSelectMatch(m);
+        landingSearchResults.appendChild(row);
+      }
+    });
+
+    function landingSearchSubmit() {
+      const q = landingSearchBox.value.trim().toUpperCase();
+      if (q.length < 3) return;
+      const matches = data.filter(d => d.address.toUpperCase().includes(q));
+      if (matches.length) landingSelectMatch(matches[0]);
+    }
+    landingSearchBox.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') landingSearchSubmit();
+    });
+    document.getElementById('landing-search-go').onclick = landingSearchSubmit;
 
     const tooltip = document.getElementById('tooltip');
 
