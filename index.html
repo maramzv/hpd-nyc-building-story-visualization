@@ -39,7 +39,11 @@
   #info-view { display: none; }
   body.info-open #info-view {
     display: block;
-    position: fixed; inset: 0; z-index: 200;  /* under #site-nav (300) */
+    /* Starts below the nav (rather than inset:0 under it) so the native
+       scrollbar track isn't hidden behind the nav's now-solid background
+       at the top of the page - it only ran the full height because the
+       old transparent nav let it show through underneath. */
+    position: fixed; top: var(--nav-h); left: 0; right: 0; bottom: 0; z-index: 200;  /* under #site-nav (300) */
     overflow-y: auto; overscroll-behavior: contain;
     background: #05070c;
     color: #e8eaf0;
@@ -55,9 +59,8 @@
      footer. The nav now lives outside it, so the reserved height is the
      viewport minus the fixed nav. */
   #info-view .page {
-    min-height: calc(100vh - var(--nav-h));
+    min-height: 100%;
     display: flex; flex-direction: column;
-    padding-top: var(--nav-h);
   }
   /* The active nav link styling the info pages had, now driven by the router
      for all five views instead of a hand-maintained class="active". */
@@ -111,15 +114,15 @@
   #panel.wide .tl-when { font-size: 10.5px; }
   #panel.wide .tl-detail dl { font-size: 11px; }
   #panel.wide #tl-key { font-size: 10.5px; }
-  #panel::-webkit-scrollbar, #evidence-table::-webkit-scrollbar, #search-results::-webkit-scrollbar { width: 6px; }
-  #panel::-webkit-scrollbar-track, #evidence-table::-webkit-scrollbar-track, #search-results::-webkit-scrollbar-track { background: transparent; }
-  #panel::-webkit-scrollbar-thumb, #evidence-table::-webkit-scrollbar-thumb, #search-results::-webkit-scrollbar-thumb {
+  #panel::-webkit-scrollbar, #evidence-table::-webkit-scrollbar, #search-results::-webkit-scrollbar, #info-view::-webkit-scrollbar { width: 6px; }
+  #panel::-webkit-scrollbar-track, #evidence-table::-webkit-scrollbar-track, #search-results::-webkit-scrollbar-track, #info-view::-webkit-scrollbar-track { background: transparent; }
+  #panel::-webkit-scrollbar-thumb, #evidence-table::-webkit-scrollbar-thumb, #search-results::-webkit-scrollbar-thumb, #info-view::-webkit-scrollbar-thumb {
     background: rgba(255,255,255,0.2); border-radius: 10px;
   }
-  #panel::-webkit-scrollbar-thumb:hover, #evidence-table::-webkit-scrollbar-thumb:hover, #search-results::-webkit-scrollbar-thumb:hover {
+  #panel::-webkit-scrollbar-thumb:hover, #evidence-table::-webkit-scrollbar-thumb:hover, #search-results::-webkit-scrollbar-thumb:hover, #info-view::-webkit-scrollbar-thumb:hover {
     background: #00b2a9;
   }
-  #evidence-table, #search-results { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
+  #evidence-table, #search-results, #info-view { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
   #panel .sub { font-size: 12px; color: #9aa1b2; margin-bottom: 14px; }
   #legend { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
   #legend .row {
@@ -497,6 +500,14 @@
   body.in-map #site-nav .lp-nav-links a:hover {
     color: var(--teal);
     text-shadow: 0 1px 4px rgba(0,0,0,0.95), 0 0 14px rgba(0,0,0,0.8);
+  }
+  /* The About/Data/Methodology pages scroll their own text/graphics under
+     the sticky nav, with nothing behind it to keep it readable (unlike the
+     map/landing pages, where #site-nav is deliberately transparent over the
+     hero/map). Give it a solid backing on just these pages. */
+  body.info-open #site-nav {
+    background: #05070c;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }
 
   #landing {
