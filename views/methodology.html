@@ -1,0 +1,548 @@
+<main>
+    <div class="content">
+      <div class="eyebrow">Methodology</div>
+      <h1>How a violation record<br>becomes a <span class="hl">story.</span></h1>
+
+      <p class="lede">
+        Every building on the map gets a plain-language narrative, not a
+        raw violation count. Here's exactly how that narrative gets built,
+        and where it still has known limits.
+      </p>
+
+      <div class="snapshot-row">
+        <div class="snap-stat"><div class="n">166,481</div><div class="l">Buildings in current dataset</div></div>
+        <div class="snap-stat"><div class="n">6</div><div class="l">Independent dimensions measured</div></div>
+        <div class="snap-stat"><div class="n">1</div><div class="l">Dimension that becomes a map color</div></div>
+      </div>
+
+      <div class="quick-legend">
+        <div class="ql-item"><span class="ql-dot" style="background: var(--green);"></span>No real defects</div>
+        <div class="ql-item"><span class="ql-dot" style="background: var(--teal);"></span>Isolated</div>
+        <div class="ql-item"><span class="ql-dot" style="background: var(--blue);"></span>Widespread</div>
+        <div class="ql-item"><span class="ql-dot" style="background: var(--yellow);"></span>Persistent</div>
+        <div class="ql-item"><span class="ql-dot" style="background: var(--red);"></span>Chronic</div>
+      </div>
+
+      <h2>The pattern, in five buckets</h2>
+      <p>
+        Every building's open violations get classified into one of five
+        patterns, based on how often a real defect (not a paperwork filing)
+        recurs and for how long:
+      </p>
+
+      <div class="bucket-row">
+        <div class="swatch" style="background: var(--green);"></div>
+        <div class="body">
+          <span class="name">No real defects</span><span class="pct">19.4% &middot; 32,256 buildings</span>
+          <div class="desc">Every violation on this building's record is administrative: a late registration filing, a missed bedbug report. No physical defect has ever been cited here.</div>
+        </div>
+      </div>
+      <div class="bucket-row">
+        <div class="swatch" style="background: var(--teal);"></div>
+        <div class="body">
+          <span class="name">Isolated</span><span class="pct">46.1% &middot; 76,785 buildings</span>
+          <div class="desc">This building has real physical defects on record, but only a handful (below the citywide 75th percentile of 9), and none of them has ever been cited a second time.</div>
+        </div>
+      </div>
+      <div class="bucket-row">
+        <div class="swatch" style="background: var(--blue);"></div>
+        <div class="body">
+          <span class="name">Widespread</span><span class="pct">17.7% &middot; 29,479 buildings</span>
+          <div class="desc">This building has many real physical defects on record (9+, more than most buildings with no repeating pattern), but none of them has ever been cited a second time.</div>
+        </div>
+      </div>
+      <div class="bucket-row">
+        <div class="swatch" style="background: var(--yellow);"></div>
+        <div class="body">
+          <span class="name">Persistent</span><span class="pct">14.1% &middot; 23,453 buildings</span>
+          <div class="desc">The same specific defect has been cited 3 or more times over at least 2 years: it kept coming back after being flagged.</div>
+        </div>
+      </div>
+      <div class="bucket-row">
+        <div class="swatch" style="background: var(--red);"></div>
+        <div class="body">
+          <span class="name">Chronic</span><span class="pct">2.7% &middot; 4,508 buildings</span>
+          <div class="desc">The same specific defect has been cited 10 or more times over at least 5 years: a problem that's gone unresolved for the better part of a decade.</div>
+        </div>
+      </div>
+
+      <p style="font-size: 13px; color: #8b91a0;">
+        All figures on this page are read live off <code>data/map_dataset.json</code>,
+        the same file the map itself loads, so they move with
+        every re-pull instead of being frozen at whatever they were on
+        launch day.
+      </p>
+
+      <p>
+        Recurrence is measured <strong style="color:#e8eaf0;">building-wide</strong>,
+        not per apartment: a defect (same order code, coherent
+        description) recurring across different units still counts as the
+        same recurring problem. A pest infestation cited in nine different
+        apartments over several years, for example, is one building-wide
+        recurring problem, not nine unrelated ones (see "How this taxonomy
+        was developed" below for how this was validated).
+      </p>
+
+      <h2>What this reveals, once you zoom in</h2>
+      <div class="note" style="margin-top: 8px;">
+        <strong style="color:#e8eaf0;">The headline finding:</strong> recurring
+        defects are not spread evenly across the city. Persistent + Chronic
+        buildings run about 2.7&times; higher in the Bronx and Manhattan
+        (~26%) than in Queens and Staten Island (~10%), and at the
+        neighborhood level, that gap widens further still: nearly 3 in 5
+        buildings with an open violation in Fordham Heights, Bronx show a
+        recurring defect.
+      </div>
+      <p>
+        By borough, Persistent + Chronic buildings run roughly <strong style="color:#e8eaf0;">2.7&times;</strong>
+        higher in the Bronx and Manhattan (both ~26%) than in Queens and
+        Staten Island (both ~10%):
+      </p>
+      <div class="table-wrap">
+      <table class="data-table">
+        <tr><th>Borough</th><th class="num">Buildings</th><th class="num">Persistent + Chronic</th></tr>
+        <tr><td>Bronx</td><td class="num">25,046</td><td class="num" style="color: var(--yellow);">26.5%</td></tr>
+        <tr><td>Manhattan</td><td class="num">21,030</td><td class="num" style="color: var(--yellow);">26.3%</td></tr>
+        <tr><td>Brooklyn</td><td class="num">71,611</td><td class="num">15.4%</td></tr>
+        <tr><td>Staten Island</td><td class="num">6,110</td><td class="num">10.0%</td></tr>
+        <tr><td>Queens</td><td class="num">42,684</td><td class="num">9.8%</td></tr>
+      </table>
+      </div>
+      <p>
+        And a borough average smooths over how concentrated it really gets.
+        Among neighborhoods with at least 100 mapped buildings, the highest
+        combined Persistent + Chronic rates all cluster in a compact band of
+        northern Manhattan and the west Bronx:
+      </p>
+      <div class="table-wrap">
+      <table class="data-table">
+        <tr><th>Neighborhood</th><th>Borough</th><th class="num">Buildings</th><th class="num">Persistent + Chronic</th></tr>
+        <tr><td>Fordham Heights</td><td>Bronx</td><td class="num">361</td><td class="num" style="color: var(--red);">59.8%</td></tr>
+        <tr><td>Washington Heights (North)</td><td>Manhattan</td><td class="num">656</td><td class="num" style="color: var(--red);">56.4%</td></tr>
+        <tr><td>Inwood</td><td>Manhattan</td><td class="num">323</td><td class="num" style="color: var(--red);">56.3%</td></tr>
+        <tr><td>Manhattanville&ndash;West Harlem</td><td>Manhattan</td><td class="num">263</td><td class="num" style="color: var(--red);">55.5%</td></tr>
+        <tr><td>Washington Heights (South)</td><td>Manhattan</td><td class="num">869</td><td class="num" style="color: var(--yellow);">51.1%</td></tr>
+      </table>
+      </div>
+      <p>
+        In Fordham Heights, nearly 3 in 5 buildings with an open violation
+        show a recurring defect, against a Bronx-wide rate of 26%.
+        This is descriptive, not causal: building age, ownership
+        concentration, enforcement patterns, and reporting rates are all
+        outside this dataset's scope, so no claim is made about
+        <em>why</em> the pattern concentrates here.
+      </p>
+
+      <h2>Six dimensions, one sentence</h2>
+      <p>
+        Each building's story is composed from six measured dimensions
+        rather than a single fixed label, because the dimensions vary
+        independently: a building can be chronic <em>and</em> recently
+        accelerating <em>and</em> well-handled by the owner, all at the same
+        time, and each of those facts needs to be stated on its own rather
+        than compressed into one word (see "How this taxonomy was
+        developed" below for the validation behind that decision).
+      </p>
+      <p>
+        Each dimension is explained below on its own terms: what it
+        measures, how it's calculated, where it can mislead if read alone,
+        and a plain example. Four of these six dimensions are a single
+        number sorted into a named tier; the other two (Engagement, Pattern)
+        are a small set of conditions checked together, which is why they
+        don't get a threshold bar.
+      </p>
+      <div class="fdim-grid">
+
+        <div class="fdim-card">
+          <div class="fdim-head"><div class="fdim-name">Scale</div></div>
+          <div class="fdim-meaning">How many violations are currently open on the building, a raw count. Says nothing on its own about how serious those violations are or whether the same problem keeps coming back; a building can be large on Scale purely from paperwork, or from one severe recurring issue.</div>
+          <div class="fscale-bar">
+            <div class="seg" style="background:var(--seq-100);">Min</div>
+            <div class="seg" style="background:var(--seq-200);">Low</div>
+            <div class="seg" style="background:var(--seq-400);">Mod</div>
+            <div class="seg" style="background:var(--seq-600);">Large</div>
+            <div class="seg" style="background:var(--seq-700); color:#06141a;">Severe</div>
+          </div>
+          <div class="fthresholds">&le;3 &middot; 4&ndash;7 &middot; 8&ndash;18 &middot; 19&ndash;66 &middot; 67+</div>
+          <div class="no-marker-note"><div class="caveat-block"><span class="example-label">Example</span>a building with 45 open violations lands in "Large" whether those are 45 unrelated one-off complaints or the same complaint cited 45 times. Pattern and Severity, not Scale, distinguish those two situations.</div></div>
+        </div>
+
+        <div class="fdim-card">
+          <div class="fdim-head"><div class="fdim-name">Recency</div></div>
+          <div class="fdim-meaning">What share of a building's open violations were issued in the last 730 days (2 years). Independent of Scale, since an old backlog and a fresh burst of activity can both happen at any volume. The window was widened from 1 year to 2 because HPD's correction-and-certification process routinely runs 6&ndash;18 months, so a 14-month-old violation is usually still an active matter, not history.</div>
+          <div class="fscale-bar">
+            <div class="seg" style="background:var(--seq-200);">Gone quiet</div>
+            <div class="seg" style="background:var(--seq-500);">Ongoing</div>
+            <div class="seg" style="background:var(--seq-700); color:#06141a;">Active surge</div>
+          </div>
+          <div class="fthresholds">&lt;15% &middot; 15&ndash;70% &middot; &gt;70%</div>
+          <div class="no-marker-note">
+            <div class="caveat-block"><span class="example-label">Example</span>a building with 10 open violations, 8 of them issued in the last 2 years, reads 80% recent: "Active surge."</div>
+            <div class="caveat-block"><span class="caveat-label">Caveat</span>this describes new filings, not necessarily new problems. A defect can be re-cited on reinspection without anything changing about it.</div>
+          </div>
+        </div>
+
+        <div class="fdim-card">
+          <div class="fdim-head"><div class="fdim-name">Severity</div></div>
+          <div class="fdim-meaning">Share of a building's open violations that are Class C, HPD's "immediately hazardous" tier (heat, hot water, fire, gas). Independent of recurrence: a single gas leak reads Extreme severity even with zero repeats.</div>
+          <div class="fscale-bar">
+            <div class="seg" style="background:var(--seq-100);">Low</div>
+            <div class="seg" style="background:var(--seq-300);">Elevated</div>
+            <div class="seg" style="background:var(--seq-500);">Severe</div>
+            <div class="seg" style="background:var(--seq-700); color:#06141a;">Extreme</div>
+          </div>
+          <div class="fthresholds">&lt;10% (or Elevated floor) &middot; 10&ndash;30% &middot; 30&ndash;70% &middot; &gt;70%</div>
+          <div class="no-marker-note">
+            <div class="caveat-block"><span class="example-label">Example</span>1 Class C out of 20 total violations (5%) would round to "Low" by rate alone, but reads "Elevated" because of that floor.</div>
+            <div class="caveat-block"><span class="caveat-label">Caveat</span>a building with even one currently-open, uncertified Class C can never read "Low," no matter how small a share of its total that one violation is. The floor moves it straight to Elevated, so one live hazard can't be diluted into "mostly fine" by a large denominator.</div>
+          </div>
+        </div>
+
+        <div class="fdim-card">
+          <div class="fdim-head"><div class="fdim-name">Engagement</div></div>
+          <div class="fdim-meaning">How the owner's self-certifications have gone: accepted vs. rejected as false or invalid. This dimension isn't in the map's citywide summary file at all; it's computed live from the full evidence record only when a building's detail view is opened, since certification history isn't part of the dataset used to color the map.</div>
+          <div class="fscale-bar">
+            <div class="seg" style="background:#5b6070;">Too early</div>
+            <div class="seg" style="background:#7d5a99;">Unaddressed</div>
+            <div class="seg" style="background:var(--red);">Resistant</div>
+            <div class="seg" style="background:var(--yellow); color:#3a2c00;">Mixed</div>
+            <div class="seg" style="background:var(--green);">Responsive</div>
+          </div>
+          <div class="no-marker-note">
+            <div class="caveat-block"><span class="example-label">Example</span>2 accepted and 6 rejected (8 attempts, 25% accepted) reads "Resistant"; 1 attempt, accepted, still reads "Too early to tell."</div>
+            <div class="caveat-block"><span class="caveat-label">Caveat</span>below 3 certification attempts, this reads "Too early to tell" rather than a judgment. One accepted certification isn't a pattern. A separate "Unaddressed" state is reserved for zero attempts with a deadline blown 90+ days: silence long enough to be its own finding, distinct from simply not enough data yet.</div>
+          </div>
+        </div>
+
+        <div class="fdim-card">
+          <div class="fdim-head"><div class="fdim-name">Pattern</div></div>
+          <div class="fdim-meaning">The only dimension currently colored on the map. Does one specific defect (any apartment) keep recurring, and for how long?</div>
+          <div class="fscale-bar">
+            <div class="seg" style="background:var(--green);">No real</div>
+            <div class="seg" style="background:var(--teal); color:#06141a;">Isolated</div>
+            <div class="seg" style="background:var(--blue);">Widespread</div>
+            <div class="seg" style="background:var(--yellow); color:#3a2c00;">Persistent</div>
+            <div class="seg" style="background:var(--red);">Chronic</div>
+          </div>
+          <div class="no-marker-note">
+            <div class="caveat-block"><span class="example-label">Example</span>a building with 12 real defects, none repeated, is Widespread; a building with only 3 real defects, one of them cited 3 separate times over 2 years, is Persistent instead: fewer total violations, but a repeating problem.</div>
+            <div class="caveat-block"><span class="caveat-label">Caveat</span>not a single number. It's a set of conditions (real-defect count, and for each recurring code, how many times and over how long a span) checked together, with the strongest recurring signature deciding the result.</div>
+          </div>
+        </div>
+
+        <div class="fdim-card">
+          <div class="fdim-head"><div class="fdim-name">Backlog age</div></div>
+          <div class="fdim-meaning">How stale the single oldest missed deadline on a building is. Measures degree, not presence: most open violations are overdue at all; this asks by how much.</div>
+          <div class="fscale-bar">
+            <div class="seg" style="background:var(--seq-100); font-size:7.5px;">Nothing overdue</div>
+            <div class="seg" style="background:var(--seq-300); font-size:7.5px;">Recently overdue</div>
+            <div class="seg" style="background:var(--seq-500); font-size:7.5px;">Years overdue</div>
+            <div class="seg" style="background:var(--seq-600); color:#06141a; font-size:7.5px;">Long overdue</div>
+            <div class="seg" style="background:var(--seq-700); color:#06141a; font-size:7.5px;">Decades overdue</div>
+          </div>
+          <div class="fthresholds">0 &middot; &lt;2yr &middot; 2&ndash;9.7yr &middot; 9.7&ndash;25yr &middot; 25yr+</div>
+          <div class="no-marker-note">
+            <div class="caveat-block"><span class="example-label">Example</span>a building whose single oldest missed deadline is 12 years past due reads "Long overdue," even if every other violation on file was just issued.</div>
+            <div class="caveat-block"><span class="caveat-label">Caveat</span>"Nothing overdue" is its own state, not the bottom of a ramp. It means no deadline has actually been missed yet, separate from the aging scale that only starts once one has. A violation the owner has already certified as fixed no longer counts here, however old.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <h2>Pattern &times; Severity: why crossing two axes isn't multiplication</h2>
+      <p>
+        Crossing two dimensions doesn't mean multiplying them. It
+        means asking one question: <em>of the buildings that landed in
+        Pattern bucket A, how many also carry Severity level B?</em> That
+        question only matters if the two axes can move independently, and
+        the real numbers say they do. Computed directly from the current
+        166,481-building dataset, using each building's overall Class C
+        share (a simplified rate-only version of Severity; the exact
+        live algorithm also floors any building with a currently-open,
+        uncertified Class C straight to "Elevated," but which violations
+        are uncertified isn't part of this summary file, only the full
+        per-building evidence record):
+      </p>
+      <div class="note" style="margin: 16px 0 20px;">
+        In plain terms: a building having a chronic, long-running problem
+        doesn't mean it's currently an extreme hazard. Most Chronic
+        buildings actually sit at Low or Elevated severity, not Extreme.
+        And a building can carry an Extreme-severity hazard today with no
+        history of anything repeating at all. Recurrence and danger are
+        answers to two different questions, and the table below is what
+        makes that visible rather than assumed.
+      </div>
+      <div class="table-wrap">
+      <table class="heatmap">
+        <thead><tr><th></th><th>Low</th><th>Elevated</th><th>Severe</th><th>Extreme</th><th>Total</th></tr></thead>
+        <tbody>
+          <tr>
+            <th><span class="dot" style="background:var(--green)"></span>No real defects</th>
+            <td style="background:var(--seq-700); color:#06141a;">32,256</td>
+            <td class="zero">0</td><td class="zero">0</td><td class="zero">0</td>
+            <td class="row-total">32,256</td>
+          </tr>
+          <tr>
+            <th><span class="dot" style="background:var(--teal)"></span>Isolated</th>
+            <td style="background:var(--seq-600); color:#06141a;">42,861</td>
+            <td style="background:var(--seq-300)">10,824</td>
+            <td style="background:var(--seq-400)">12,683</td>
+            <td style="background:var(--seq-300)">10,417</td>
+            <td class="row-total">76,785</td>
+          </tr>
+          <tr>
+            <th><span class="dot" style="background:var(--blue)"></span>Widespread</th>
+            <td style="background:var(--seq-400)">11,476</td>
+            <td style="background:var(--seq-400)">10,907</td>
+            <td style="background:var(--seq-300)">6,316</td>
+            <td class="zero">780</td>
+            <td class="row-total">29,479</td>
+          </tr>
+          <tr>
+            <th><span class="dot" style="background:var(--yellow)"></span>Persistent</th>
+            <td style="background:var(--seq-200)">5,242</td>
+            <td style="background:var(--seq-400)">10,860</td>
+            <td style="background:var(--seq-300)">6,817</td>
+            <td class="zero">534</td>
+            <td class="row-total">23,453</td>
+          </tr>
+          <tr>
+            <th><span class="dot" style="background:var(--red)"></span>Chronic</th>
+            <td class="zero">443</td>
+            <td style="background:var(--seq-200)">2,452</td>
+            <td style="background:var(--seq-200)">1,581</td>
+            <td class="zero">32</td>
+            <td class="row-total">4,508</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <p>
+        <strong style="color:#e8eaf0;">10,417 buildings</strong> currently
+        carry an Extreme-severity record while sitting in the "Isolated"
+        bucket, more than twice the entire Chronic bucket (4,508).
+        A one-off Class C hazard and a decade-long recurring problem are
+        both real, and both rare relative to the whole dataset, but they
+        are not the same finding, which is exactly why Severity is
+        never folded into Pattern's color.
+      </p>
+      <p style="font-size: 13px; color: #8b91a0;">
+        Meanwhile only 32 of 4,508 Chronic buildings (0.7%) reach Extreme
+        severity. Most Chronic recurrence (65%) is Low or Elevated
+        severity, not the most hazardous class. Recurring for years and
+        being dangerous right now are two different questions.
+      </p>
+
+      <h2>Worked examples</h2>
+      <p>
+        Two different questions, answered separately below: what does an
+        average building on the map actually look like, and what does a
+        building in each of the five Pattern buckets actually look like.
+        Answering only the second question would leave the wrong
+        impression: most buildings are quiet, not dramatic.
+      </p>
+
+      <h3 style="font-size: 15px; font-weight: 700; color: #e8eaf0; margin: 28px 0 4px;">The average building</h3>
+      <p style="font-size: 13px; color: #8b91a0; margin-top: 0;">
+        Found by identifying the single most common exact combination of
+        Pattern, Scale, and Severity across all 166,481 buildings, then
+        choosing a real address inside that combination at random.
+      </p>
+      <div class="wex typical">
+        <div>
+          <div class="addr">198 Montrose Avenue</div>
+          <div class="bid">Brooklyn, East Williamsburg &middot; BuildingID 946632</div>
+          <div class="tags">
+            <span class="wex-tag t-teal">14.2% of all buildings match this exact profile</span>
+            <span class="wex-tag">2 open violations</span>
+          </div>
+        </div>
+        <div>
+          <p>Isolated &middot; Minimal scale &middot; Low severity. Two open violations, at least one a real (non-administrative) defect, neither Class C, both issued within the last 2 years. This combination, a small, mostly quiet building with one real but non-recurring issue, is what an average building on the map actually looks like, not any of the five below.</p>
+        </div>
+      </div>
+
+      <h3 style="font-size: 15px; font-weight: 700; color: #e8eaf0; margin: 40px 0 4px;">One example from each bucket</h3>
+      <p style="font-size: 13px; color: #8b91a0; margin-top: 0;">
+        One real building per Pattern bucket, in the same order as the
+        bucket list above.
+      </p>
+
+      <div class="wex">
+        <div>
+          <div class="addr">94 Butler Street</div>
+          <div class="bid">Brooklyn, Carroll Gardens &middot; BuildingID 216450</div>
+          <div class="tags">
+            <span class="wex-tag t-green">Pattern: No real defects</span>
+            <span class="wex-tag">2 open violations</span>
+          </div>
+        </div>
+        <div>
+          <p>Two open violations, both administrative; neither is a physical defect on the building itself. This bucket is a neutral finding, not a clean bill of health: it describes what's on this open-violations feed, not the building's full history.</p>
+        </div>
+      </div>
+
+      <div class="wex">
+        <div>
+          <div class="addr">305 West 52nd Street</div>
+          <div class="bid">Manhattan, Hell's Kitchen &middot; BuildingID 33945</div>
+          <div class="tags">
+            <span class="wex-tag t-teal">Pattern: Isolated</span>
+            <span class="wex-tag t-red">Severity: Extreme</span>
+          </div>
+        </div>
+        <div>
+          <p>One open violation, total. It's Class C, a currently immediately-hazardous condition, so Severity reads Extreme (100% of records). But it's a single event with nothing recurring, so Pattern reads Isolated. Both labels are correct and both are necessary: neither one alone describes this building.</p>
+          <p class="verdict">The map colors this building teal (Isolated) even though it's carrying the single most severe hazard class HPD has.</p>
+        </div>
+      </div>
+
+      <div class="wex">
+        <div>
+          <div class="addr">169 Beach 115th Street</div>
+          <div class="bid">Queens, Rockaway Park &middot; BuildingID 634232</div>
+          <div class="tags">
+            <span class="wex-tag t-blue">Pattern: Widespread</span>
+            <span class="wex-tag t-yellow">Backlog: Decades overdue</span>
+          </div>
+        </div>
+        <div>
+          <p>53 open violations, only 2 of them Class C, none of them ever repeating: a wide spread of different, mostly non-hazardous problems rather than one recurring issue. Its oldest missed deadline is 44.1 years past due (Decades overdue), with almost none of its violations issued in the last 2 years (Gone quiet recency): a large, old, quiet backlog, not an active emergency.</p>
+          <p class="verdict">Widespread and a decades-old backlog read very differently from Chronic and a decades-old backlog, even though both combinations are real.</p>
+        </div>
+      </div>
+
+      <div class="wex">
+        <div>
+          <div class="addr">1335 Flatbush Avenue</div>
+          <div class="bid">Brooklyn, East Flatbush &middot; BuildingID 292219</div>
+          <div class="tags">
+            <span class="wex-tag t-yellow">Pattern: Persistent</span>
+            <span class="wex-tag">18 open violations</span>
+          </div>
+        </div>
+        <div>
+          <p>18 open violations, moderate scale, 4 of them Class C (22%, Elevated severity), with a defect signature that has recurred at least 3 times over 2+ years. Its oldest missed deadline is 8.0 years overdue: "Years overdue," well short of the 9.7-year "Long overdue" cutoff. A genuinely mid-range building: real recurrence, moderate severity, an aging but not yet extreme backlog.</p>
+        </div>
+      </div>
+
+      <div class="wex">
+        <div>
+          <div class="addr">2455 Bedford Avenue</div>
+          <div class="bid">Brooklyn, East Flatbush-Erasmus &middot; BuildingID 205942</div>
+          <div class="tags">
+            <span class="wex-tag t-red">Pattern: Chronic</span>
+            <span class="wex-tag t-red">483 open violations</span>
+            <span class="wex-tag t-yellow">Backlog: Long overdue</span>
+          </div>
+        </div>
+        <div>
+          <p>483 open violations, Severe scale, 73 of them Class C (15.1%, Elevated severity), and none issued in the past 2 years (Gone quiet recency). Its oldest missed deadline is 17.3 years past due (Long overdue). Chronic, Severe scale, Elevated severity, and Gone quiet, all at once: a large recurring problem that has also gone quiet on the surface, which reads very differently from a large recurring problem that's actively escalating. This is the kind of building the six-dimension model exists to describe accurately, not one label, several real measurements that happen to all point the same direction here.</p>
+        </div>
+      </div>
+
+      <h2>Show me the records</h2>
+      <p>
+        Every building's detail view includes a "Why we're saying this"
+        link that opens the actual underlying violation records
+        (date, class, status, description) that the story above was
+        generated from. No story on this site is asserted without the
+        evidence being one click away. Each record in that timeline is
+        color-coded by what actually happened to it. The underlying
+        date fields each state draws on, and how long each step of the
+        process typically takes, are broken down in
+        <a href="/data" style="color: var(--teal);">Data</a>:
+      </p>
+      <div class="status-grid">
+        <div class="status-item"><span class="dot" style="background:#2bb24d;"></span><div><span class="name">Fixed</span><span class="desc">The landlord certified the repair was done and the city accepted it. Resolved, at least on record.</span></div></div>
+        <div class="status-item"><span class="dot" style="background:#4b93d1;"></span><div><span class="name">City follow-up</span><span class="desc">Something is still moving: a reinspection scheduled, a warning letter or civil penalty sent, an extension granted. Active, not resolved.</span></div></div>
+        <div class="status-item"><span class="dot" style="background:#fff;"></span><div><span class="name">Newly issued</span><span class="desc">The fix deadline hasn't passed yet, however short (a Class C can carry a 5-day deadline) or long. Too early to say anything.</span></div></div>
+        <div class="status-item"><span class="dot" style="background:#f0b429;"></span><div><span class="name">Past-due</span><span class="desc">The fix deadline has passed with no accepted repair. After ~2 years with nothing further, it becomes Frozen.</span></div></div>
+        <div class="status-item"><span class="dot" style="background:#9aa1b2;"></span><div><span class="name">Frozen</span><span class="desc">Nothing recorded in ~2 years. Could be the landlord ignoring it, could be the city never following up. The records can't say which.</span></div></div>
+        <div class="status-item"><span class="dot" style="background:#d84b4b;"></span><div><span class="name">Cert. rejected</span><span class="desc">The landlord filed a certification claiming it was fixed, and the city rejected it as false or invalid.</span></div></div>
+        <div class="status-item"><span class="dot" style="background:#a06fd6;"></span><div><span class="name">Paperwork not filed</span><span class="desc">Not a repair: a required filing (registration, annual bedbug report, a posted notice) that hasn't been made.</span></div></div>
+      </div>
+
+      <h2>How this taxonomy was developed</h2>
+      <p>
+        The Pattern taxonomy was built and validated in stages, moving from
+        a smaller sample to the full citywide population as each stage's
+        results were tested against real buildings.
+      </p>
+      <p>
+        <strong style="color:#e8eaf0;">Stage 1: initial taxonomy.</strong>
+        A three-bucket model (Isolated / Persistent / Chronic) was built on
+        a 2,983-building sample, with recurrence matched within the same
+        apartment. This established the core method: group violations by
+        building, detect repeat citations of the same defect code, and
+        classify by how many times and over how long a span.
+      </p>
+      <p>
+        <strong style="color:#e8eaf0;">Stage 2: full-population validation.</strong>
+        Extending the method to all 166,481 buildings surfaced two
+        refinements the sample hadn't shown a need for. First, apartment-scoped
+        matching cannot see a defect recurring across different units in the
+        same building. A pest infestation cited in nine separate
+        apartments over several years is a single building-wide recurring
+        problem, not nine isolated ones. Recurrence matching was extended to
+        the building level accordingly. Second, "Isolated" was carrying two
+        distinct realities under one label: buildings with no physical
+        defect on file at all, and buildings with many different one-off
+        defects but no repeated one. These were split into "No real
+        defects" and "Widespread," producing the current five-bucket model
+        and its citywide distribution above.
+      </p>
+      <p>
+        <strong style="color:#e8eaf0;">Stage 3: the six-dimension
+        model.</strong> Testing candidate single-label story types (e.g.
+        "chronic," "acute," "recurring") against a stratified 80-building
+        sample showed the underlying measurements move independently of
+        each other. Scale, recency, severity, and owner engagement
+        do not correlate strongly enough to compress into one label without
+        losing information (2455 Bedford Avenue below is Chronic and Severe
+        scale but also Gone quiet on Recency; a different building can share
+        that same Chronic/Severe combination while actively escalating). The
+        dimensional model replaced the fixed-label approach for this reason:
+        each axis is reported on its own, and the narrative sentence states
+        whichever combination the evidence actually supports.
+      </p>
+      <p style="font-size: 13px; color: #8b91a0;">
+        Order codes that recur by regulatory design rather than by physical
+        defect (an annual bedbug-report filing, a registration
+        renewal) were identified during this validation and excluded
+        from recurrence detection (7 codes currently, audited from the top
+        60 of 396 by citywide volume; see Known limitations below).
+      </p>
+
+      <h2>Known limitations</h2>
+      <p>These are open, not hidden. As of this writing:</p>
+      <ul class="limits">
+        <li><strong style="color:#e8eaf0;">"Open" does not always mean "actively live."</strong> Certified-fixed violations are excluded from backlog age, and a violation past deadline with zero recorded activity for 2+ years is labeled "Frozen" in the evidence timeline rather than treated the same as an actively-contested one. A softer 5-year staleness signal is computed internally (<code>stale_status_count</code>) but not yet surfaced in the UI: only the 2-year "Frozen" state is currently shown to users.</li>
+        <li><strong style="color:#e8eaf0;">Recurring signatures can conflate a real repeating problem with a generic repair code.</strong> One order code ("repair with similar material...") covered 20 different structural defects at a single building. The narrative wording flags this when a signature's descriptions don't cohere, but the Persistent/Chronic <em>bucket counts</em> don't require that coherence check yet, only the sentence does.</li>
+        <li><strong style="color:#e8eaf0;">Administrative-filing exclusion isn't exhaustive.</strong> Only the top 60 of 396 <code>OrderNumber</code> codes have been manually audited for hidden compliance-calendar patterns like the bedbug-report case; the current exclusion list covers 7 codes.</li>
+        <li>There's no guard yet against genuinely implausible "still open" deadlines (e.g. a corrupted pre-1990 date) skewing a building's backlog-age calculation. Date sanity-checking exists elsewhere in the pipeline (see <a href="/data" style="color: var(--teal);">Data</a>) but not specifically on this field.</li>
+        <li>Class "I" notices (Orders to Repair/Vacate) carry no correction deadline and count toward Scale but not toward Backlog age.</li>
+        <li>Severity's "Elevated floor" rule (any currently-open, uncertified Class C blocks a "Low" read) requires per-violation certification status that isn't in the map's citywide summary file, so the Pattern &times; Severity crosstab above uses a simplified rate-only version, not the exact live rule.</li>
+      </ul>
+
+      <p style="font-size: 13px; color: #8b91a0;">
+        Want the source data itself? See <a href="/data" style="color: var(--teal);">Data</a>.
+      </p>
+
+      <div class="note" style="margin-top: 40px;">
+        Every number on this page, including the bucket counts, the crosstab,
+        the borough and neighborhood tables, and the worked examples, is
+        computed directly from <code>data/map_dataset.json</code>, the same
+        file the live map loads (166,481 buildings). Thresholds and
+        formulas read directly from <code>src/building_story.py</code>.
+        These numbers move whenever that file is regenerated from a fresh
+        API pull; this page reflects the snapshot in place as of this
+        writing, not a fixed historical figure.
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <span>NYC Building Stories</span>
+    <span>Built on NYC Open Data</span>
+  </footer>

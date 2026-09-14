@@ -10,9 +10,30 @@
       ],
       "destination": "https://nyc-building-stories.vercel.app/$1",
       "permanent": false
-    }
+    },
+    { "source": "/about.html", "destination": "/about", "permanent": true },
+    { "source": "/data.html", "destination": "/data", "permanent": true },
+    { "source": "/methodology.html", "destination": "/methodology", "permanent": true },
+    {
+      "source": "/map.html",
+      "has": [{ "type": "query", "key": "explore" }],
+      "destination": "/map",
+      "permanent": false
+    },
+    {
+      "source": "/map.html",
+      "has": [{ "type": "query", "key": "cam" }],
+      "destination": "/map",
+      "permanent": false
+    },
+    { "source": "/map.html", "destination": "/", "permanent": true },
+    { "source": "/index.html", "destination": "/", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/", "destination": "/map.html" }
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/map", "destination": "/index.html" },
+    { "source": "/about", "destination": "/index.html" },
+    { "source": "/data", "destination": "/index.html" },
+    { "source": "/methodology", "destination": "/index.html" }
   ]
 }

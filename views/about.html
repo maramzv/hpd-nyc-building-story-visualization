@@ -1,0 +1,110 @@
+<main>
+    <div class="content">
+      <div class="eyebrow">About</div>
+      <h1>Evidence, not <span class="hl">verdicts.</span></h1>
+
+      <p class="lede">
+        NYC's Open HPD Violations dataset holds millions of housing-violation
+        records. On its own, that's just a pile of rows. This project asks a
+        different question of it.
+      </p>
+
+      <blockquote>
+        What is happening to NYC's buildings, and what patterns are visible
+        in the city's housing violation records?
+      </blockquote>
+
+      <p>
+        Not "this building has 42 violations." A raw count says almost
+        nothing on its own. We're after the transformations that turn a pile
+        of records into an actual pattern: recurrence, persistence, severity,
+        concentration, and change over time. Those are the shapes that make
+        one building's story different from another's, even when their
+        violation counts look the same.
+      </p>
+
+      <p>
+        The site is built around that idea, top to bottom: start at the
+        citywide pattern, narrow to a borough, then a neighborhood, then a
+        single building. At every zoom level, the claim being made
+        is only as strong as the evidence behind it. Every building's story
+        links back to the actual violation records it was generated from, so
+        the underlying evidence is never more than a click away.
+      </p>
+
+      <h2>Four zoom levels, one question</h2>
+      <p>
+        The map is built as a drill-down, and each level answers a
+        different scope of the same question:
+      </p>
+      <div class="zoom-path">
+        <span style="color: var(--teal)">Citywide</span> <span class="arrow">→</span>
+        <span style="color: var(--blue)">Borough</span> <span class="arrow">→</span>
+        <span style="color: var(--yellow)">Neighborhood</span> <span class="arrow">→</span>
+        <span style="color: var(--red)">Building</span>
+      </div>
+      <p>
+        Click a borough and the map flies there while its row expands to
+        show its top neighborhoods. Click a neighborhood to fly in closer.
+        Click any building's 3D column for its full evidence-based story,
+        or search an address directly if you already know where
+        you're headed. A "Why we're saying this" link on every building
+        opens the actual violation records the story was built from.
+      </p>
+
+      <h2>Five ways to look at the same buildings</h2>
+      <p>
+        The height of every column on the map is a choice, not a fixed
+        property of the data. You can switch what it represents:
+      </p>
+      <div class="lens-grid">
+        <div class="lens-card"><div class="name">Buildings</div><div class="desc">Real height, from NYC footprint data.</div></div>
+        <div class="lens-card"><div class="name">Violations</div><div class="desc">Count of currently open violations.</div></div>
+        <div class="lens-card"><div class="name">Age</div><div class="desc">Years past deadline for the oldest open item.</div></div>
+        <div class="lens-card"><div class="name">Severity</div><div class="desc">Count of Class C (immediately hazardous) violations.</div></div>
+        <div class="lens-card"><div class="name">Recent</div><div class="desc">Violations issued in the last 2 years.</div></div>
+      </div>
+      <p>
+        The color underneath never changes: it's always the Pattern
+        bucket (see <a href="/methodology" style="color: var(--teal);">Methodology</a>).
+        Only what the height means changes.
+      </p>
+
+      <h2>Who this is for</h2>
+      <p>
+        Anyone trying to understand NYC housing conditions through public
+        data, with an evidence-backed exploration of what the data shows,
+        not a curated argument for a conclusion decided in advance.
+      </p>
+
+      <div class="split">
+        <div class="card is-yes">
+          <div class="tag">This is</div>
+          <ul>
+            <li>An honest exploration of a public dataset</li>
+            <li>Patterns tested against real buildings before being shown</li>
+            <li>Full transparency into the records behind every claim</li>
+          </ul>
+        </div>
+        <div class="card is-no">
+          <div class="tag">This isn't</div>
+          <ul>
+            <li>A "should I live here" score or recommendation engine</li>
+            <li>A ranking of landlords or a legal record</li>
+            <li>A complete picture of building safety or condition</li>
+          </ul>
+        </div>
+      </div>
+
+      <p style="margin-top: 28px; font-size: 13px; color: #8b91a0;">
+        Curious how the numbers are built or where the buckets come from?
+        See <a href="/data" style="color: var(--teal);">Data</a>
+        and <a href="/methodology" style="color: var(--teal);">Methodology</a>.
+      </p>
+    </div>
+  </main>
+
+  <footer>
+    <span>NYC Building Stories</span>
+    <span>Built on NYC Open Data</span>
+  </footer>

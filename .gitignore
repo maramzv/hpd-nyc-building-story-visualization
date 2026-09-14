@@ -12,12 +12,16 @@ data/*.superseded*
 data/*.pre-geocode
 data/*.pre-lens-metrics
 !data/.gitkeep
-# map.html fetches these three directly - Vercel deploys straight from git,
-# so they have to actually be tracked, not just allowed through .vercelignore.
-!data/map_dataset.json
+# The site fetches these directly - Vercel deploys straight from git, so they
+# have to actually be tracked, not just allowed through .vercelignore.
 !data/neighborhoods.json
 !data/nyc_boundary.geojson
-!data/footprints.json
+# map_dataset.json and footprints.json are deliberately NOT tracked any more:
+# at 55MB and 36MB they tripped GitHub's large-file warning. They are the
+# pipeline's canonical intermediates, and scripts/build_web_data.py packs them
+# into the small per-borough slices in data/web/ that the site actually loads.
+# (data/web/ isn't matched by the data/*.json rule above - that glob doesn't
+# cross a directory separator - so those slices are tracked automatically.)
 data/_fp_build_cache/
 data/sample2983_backup/
 docs/

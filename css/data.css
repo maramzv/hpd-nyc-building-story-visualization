@@ -1,0 +1,100 @@
+/* data.html's own styles, extracted verbatim for the SPA router.
+   The shell (index.html) now owns the :root colour vars, the box-sizing
+   reset, html/body, .page and the whole nav block - those were identical
+   across the three info pages and are the duplication this split removes.
+   Injected only while this view is active, so each page keeps its own
+   cascade (about and data define p.lede differently, for example). */
+main { flex: 1; display: flex; justify-content: center; padding: 60px 40px 80px; }
+  .content { max-width: 960px; width: 100%; }
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+    color: var(--teal); text-transform: uppercase; margin-bottom: 18px;
+  }
+  h1 {
+    font-size: 36px; line-height: 1.15; font-weight: 700;
+    letter-spacing: -0.015em; margin: 0 0 24px 0;
+  }
+  h1 .hl { color: var(--teal); }
+  p { font-size: 15px; line-height: 1.7; color: #c3c7d3; margin: 0 0 20px 0; max-width: 680px; }
+  p.lede { font-size: 16.5px; color: #dfe2ea; max-width: 680px; }
+  h2 { font-size: 18px; font-weight: 700; margin: 44px 0 16px 0; color: #e8eaf0; }
+
+  .source-card {
+    background: rgba(18,20,28,0.72);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin: 12px 0 28px;
+  }
+  .source-card .row { display: flex; justify-content: space-between; gap: 16px; font-size: 13.5px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .source-card .row:last-child { border-bottom: none; }
+  .source-card .k { color: #8b91a0; }
+  .source-card .v { color: #e8eaf0; text-align: right; }
+  .source-card a { color: var(--teal); text-decoration: none; }
+  .source-card a:hover { text-decoration: underline; }
+
+  .stat-grid { display: flex; gap: 18px; flex-wrap: wrap; margin: 20px 0 32px; }
+  .stat-box {
+    flex: 1 1 150px;
+    background: rgba(18,20,28,0.72);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .stat-box .num { font-size: 24px; font-weight: 700; color: var(--teal); line-height: 1.1; }
+  .stat-box .lbl { font-size: 11.5px; color: #9aa1b2; margin-top: 8px; line-height: 1.4; }
+
+  .note {
+    margin: 28px 0; padding: 16px 20px;
+    border-left: 3px solid var(--blue);
+    background: rgba(66,133,224,0.07);
+    font-size: 13.5px; line-height: 1.65; color: #c3c7d3;
+  }
+  .note strong { color: #e8eaf0; }
+  .note.warn { border-left-color: var(--yellow); background: rgba(230,180,60,0.07); }
+  .note.red { border-left-color: var(--red); background: rgba(220,70,60,0.07); }
+
+  table.data-table { width: 100%; border-collapse: collapse; margin: 12px 0 28px; font-size: 13px; }
+  table.data-table th, table.data-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  table.data-table th { color: #9aa1b2; font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+  table.data-table td { color: #c3c7d3; }
+  table.data-table td.num, table.data-table th.num { text-align: right; }
+  .table-wrap { overflow-x: auto; }
+
+  ul.plain { padding-left: 18px; margin: 0 0 20px; max-width: 680px; }
+  ul.plain li { font-size: 14px; line-height: 1.7; color: #c3c7d3; margin-bottom: 6px; }
+
+  .tl-step-table td, .tl-step-table th { vertical-align: top; }
+  .tl-step-table .field { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--teal); white-space: nowrap; }
+  .tl-step-table .who { font-size: 11px; color: #8b91a0; white-space: nowrap; }
+
+  .example-block {
+    background: rgba(18,20,28,0.72);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0 28px;
+  }
+  .example-block .row {
+    display: flex; gap: 14px; align-items: baseline;
+    font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .example-block .row:last-child { border-bottom: none; }
+  .example-block .row .date { font-family: ui-monospace, Menlo, monospace; color: var(--teal); width: 100px; flex-shrink: 0; }
+  .example-block .row .label { color: #8b91a0; width: 150px; flex-shrink: 0; }
+  .example-block .row .detail { color: #c3c7d3; }
+  .example-block .gap { font-size: 11px; color: #6c7180; padding-left: 114px; margin: -2px 0 2px; }
+
+  footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 40px 26px; font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #7d8395; flex-wrap: wrap; gap: 8px;
+  }
+
+  @media (max-width: 720px) {
+    main { padding: 40px 20px 60px; }
+    h1 { font-size: 28px; }
+    .source-card .row { flex-direction: column; gap: 2px; }
+    .source-card .v { text-align: left; }
+    footer { padding: 18px 20px 24px; }
+  }

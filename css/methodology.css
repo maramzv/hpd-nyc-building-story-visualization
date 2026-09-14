@@ -1,0 +1,193 @@
+/* methodology.html's own styles, extracted verbatim for the SPA router.
+   The shell (index.html) now owns the :root colour vars, the box-sizing
+   reset, html/body, .page and the whole nav block - those were identical
+   across the three info pages and are the duplication this split removes.
+   Injected only while this view is active, so each page keeps its own
+   cascade (about and data define p.lede differently, for example). */
+/* Sequential ramp used only by this page's charts. */
+  :root {
+    --seq-100: #163044; --seq-200: #1c4763; --seq-300: #1f6182;
+    --seq-400: #1c7d9c; --seq-500: #189aae; --seq-600: #22b8b9; --seq-700: var(--teal);
+  }
+
+
+  main { flex: 1; display: flex; justify-content: center; padding: 60px 40px 80px; }
+  .content { max-width: 960px; width: 100%; }
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+    color: var(--teal); text-transform: uppercase; margin-bottom: 18px;
+  }
+  h1 {
+    font-size: 36px; line-height: 1.15; font-weight: 700;
+    letter-spacing: -0.015em; margin: 0 0 24px 0;
+  }
+  h1 .hl { color: var(--teal); }
+  p { font-size: 15px; line-height: 1.7; color: #c3c7d3; margin: 0 0 20px 0; max-width: 680px; }
+  p.lede { font-size: 16.5px; color: #dfe2ea; max-width: 680px; }
+  h2 { font-size: 18px; font-weight: 700; margin: 44px 0 16px 0; color: #e8eaf0; }
+  code { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 0.9em; color: #c3c7d3; background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; }
+
+  .bucket-row {
+    display: flex; align-items: flex-start; gap: 16px;
+    background: rgba(18,20,28,0.72);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+  }
+  .bucket-row .swatch { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .bucket-row .body { flex: 1; }
+  .bucket-row .name { font-size: 14px; font-weight: 700; }
+  .bucket-row .pct { font-size: 12.5px; color: #8b91a0; margin-left: 8px; font-weight: 400; }
+  .bucket-row .desc { font-size: 13.5px; color: #9aa1b2; margin-top: 4px; line-height: 1.5; }
+
+  .dim-grid { display: flex; flex-wrap: wrap; gap: 14px; margin: 20px 0 32px; }
+  .dim-card {
+    flex: 1 1 210px;
+    background: rgba(18,20,28,0.72);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .dim-card .n { font-size: 11px; color: var(--teal); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; }
+  .dim-card .q { font-size: 13px; color: #c3c7d3; line-height: 1.5; }
+
+  .limits {
+    margin: 16px 0 32px;
+    padding: 4px 0;
+  }
+  .limits li {
+    font-size: 13.5px; line-height: 1.65; color: #c3c7d3;
+    padding: 12px 0 12px 28px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    position: relative;
+    max-width: 680px;
+  }
+  .limits li:last-child { border-bottom: none; }
+  .limits li::before {
+    content: "!"; position: absolute; left: 0; top: 11px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: rgba(230,180,60,0.15); color: var(--yellow);
+    font-size: 10.5px; font-weight: 700; text-align: center; line-height: 16px;
+  }
+  .limits { list-style: none; padding-left: 0; }
+
+  .note {
+    margin: 28px 0; padding: 16px 20px;
+    border-left: 3px solid var(--teal);
+    background: rgba(64,216,200,0.06);
+    font-size: 13.5px; line-height: 1.65; color: #c3c7d3;
+  }
+  .note strong { color: #e8eaf0; }
+
+  /* ---------- Snapshot stats row (header) ---------- */
+  .snapshot-row {
+    display: flex; gap: 28px; flex-wrap: wrap; margin: 28px 0 8px; padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .snap-stat .n { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 22px; font-weight: 700; color: var(--teal); }
+  .snap-stat .l { font-size: 11px; color: #8b91a0; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 4px; }
+
+  .quick-legend {
+    display: flex; flex-wrap: wrap; gap: 10px 22px;
+    margin: 18px 0 36px;
+    padding: 14px 18px;
+    background: rgba(18,20,28,0.72);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+  }
+  .ql-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #c3c7d3; }
+  .ql-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  .caveat-label {
+    display: inline-block; font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--yellow);
+    background: rgba(230,180,60,0.14); border-radius: 4px; padding: 1px 6px;
+    margin-right: 6px; vertical-align: middle;
+  }
+  .example-label {
+    display: inline-block; font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--teal);
+    background: rgba(64,216,200,0.12); border-radius: 4px; padding: 1px 6px;
+    margin-right: 6px; vertical-align: middle;
+  }
+  .caveat-block { margin-top: 8px; }
+  .caveat-block:first-child { margin-top: 0; }
+
+  .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin: 16px 0 28px; }
+  .status-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: rgba(18,20,28,0.72); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px; padding: 12px 14px;
+  }
+  .status-item .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+  .status-item .name { display: block; font-size: 13px; font-weight: 700; color: #e8eaf0; margin-bottom: 3px; }
+  .status-item .desc { font-size: 12px; color: #9aa1b2; line-height: 1.5; }
+  @media (max-width: 640px) { .status-grid { grid-template-columns: 1fr; } }
+
+  /* ---------- Detailed dimension cards with threshold bars ---------- */
+  .fdim-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0 32px; }
+  .fdim-card {
+    background: rgba(18,20,28,0.72); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;
+    padding: 18px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .fdim-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .fdim-name { font-size: 14.5px; font-weight: 700; color: #e8eaf0; }
+  .fdim-meaning { font-size: 12.5px; color: #9aa1b2; line-height: 1.5; }
+  .fscale-bar { display: flex; border-radius: 4px; overflow: hidden; height: 20px; border: 1px solid rgba(255,255,255,0.1); margin-top: 4px; }
+  .fscale-bar .seg { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 8.5px; font-family: "IBM Plex Mono", ui-monospace, monospace; color: #fff; letter-spacing: 0.01em; }
+  .fthresholds { font-size: 10.5px; color: #7d8395; font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  .no-marker-note { margin-top: 2px; font-size: 11.5px; color: #9aa1b2; background: rgba(255,255,255,0.04); border-radius: 6px; padding: 8px 10px; line-height: 1.45; }
+
+  table.data-table { width: 100%; border-collapse: collapse; margin: 12px 0 28px; font-size: 13px; }
+  table.data-table th, table.data-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  table.data-table th { color: #9aa1b2; font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+  table.data-table td { color: #c3c7d3; }
+  table.data-table td.num, table.data-table th.num { text-align: right; }
+  .table-wrap { overflow-x: auto; }
+
+  /* ---------- Crosstab heatmap ---------- */
+  table.heatmap { border-collapse: collapse; width: 100%; font-size: 12px; margin: 12px 0 8px; }
+  table.heatmap th, table.heatmap td { padding: 8px 7px; text-align: center; border: 1px solid rgba(255,255,255,0.08); }
+  table.heatmap thead th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: #8b91a0; font-weight: 600; background: rgba(255,255,255,0.03); }
+  table.heatmap tbody th { text-align: left; font-weight: 700; font-size: 12px; white-space: nowrap; color: #e8eaf0; }
+  table.heatmap tbody th .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  table.heatmap td { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; color: #fff; font-weight: 600; }
+  table.heatmap td.zero { color: #6c7180; font-weight: 400; background: rgba(255,255,255,0.02) !important; }
+  .row-total { color: #c3c7d3 !important; background: rgba(255,255,255,0.05) !important; }
+
+  /* ---------- Worked example cards ---------- */
+  .wex { display: grid; grid-template-columns: 190px 1fr; gap: 20px; padding: 20px 0; border-top: 1px solid rgba(255,255,255,0.08); }
+  .wex:last-child { border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .wex.typical { border-top-width: 2px; border-top-color: var(--teal); }
+  .wex .addr { font-size: 13.5px; font-weight: 700; color: #e8eaf0; margin-bottom: 3px; }
+  .wex .bid { font-size: 10.5px; color: #7d8395; font-family: "IBM Plex Mono", ui-monospace, monospace; margin-bottom: 10px; }
+  .wex .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .wex-tag {
+    font-size: 10px; font-family: "IBM Plex Mono", ui-monospace, monospace; padding: 3px 8px; border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.18); color: #9aa1b2;
+  }
+  .wex-tag.t-green { border-color: transparent; background: rgba(80,170,70,0.16); color: #7fd66f; }
+  .wex-tag.t-yellow { border-color: transparent; background: rgba(230,180,60,0.2); color: var(--yellow); }
+  .wex-tag.t-red { border-color: transparent; background: rgba(220,70,60,0.18); color: #ff8f85; }
+  .wex-tag.t-blue { border-color: transparent; background: rgba(66,133,224,0.18); color: #7fb0ff; }
+  .wex-tag.t-teal { border-color: transparent; background: rgba(64,216,200,0.16); color: var(--teal); }
+  .wex p { font-size: 13.5px; color: #9aa1b2; margin: 10px 0 0; line-height: 1.6; }
+  .wex .verdict { font-size: 12.5px; color: #c3c7d3; margin-top: 8px; font-style: italic; }
+
+  @media (max-width: 720px) {
+    .fdim-grid { grid-template-columns: 1fr; }
+    .wex { grid-template-columns: 1fr; }
+  }
+
+  footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 40px 26px; font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #7d8395; flex-wrap: wrap; gap: 8px;
+  }
+
+  @media (max-width: 720px) {
+    main { padding: 40px 20px 60px; }
+    h1 { font-size: 28px; }
+    footer { padding: 18px 20px 24px; }
+  }

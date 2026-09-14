@@ -19,10 +19,12 @@ docs/
 README.md
 
 # data/ holds many large intermediate/raw pipeline files (some 1GB+) that
-# .gitignore normally keeps out of git - only the three files map.html
-# actually fetches should be uploaded.
+# .gitignore normally keeps out of git - only what the site actually fetches
+# should be uploaded. data/web/ is the built output of
+# scripts/build_web_data.py (per-borough building + footprint slices and the
+# landing summary); map_dataset.json/footprints.json are its inputs and are
+# never served.
 data/*
-!data/map_dataset.json
+!data/web/
 !data/neighborhoods.json
 !data/nyc_boundary.geojson
-!data/footprints.json

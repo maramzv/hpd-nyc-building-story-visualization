@@ -5,13 +5,19 @@ clicks things, and checks the resulting DOM state and console for errors,
 rather than just reading the source code.
 
 Run: python scripts/test_map_ui.py
-Requires the local server running (python -m http.server 8000) and
+Requires the local dev server running (python scripts/dev_server.py) and
 Playwright/Chromium installed.
+
+NOTE: this suite predates the landing-screen redesign - it looks for
+`#landing-stats .stat` / `.num`, which are now `.lp-stat` / `.lp-num`, so
+Flow 1 fails for that reason alone. Left as-is rather than silently
+rewritten; scripts/test_router.py and scripts/test_web_data.py cover the
+routing and data layers in the meantime.
 """
 import sys
 from playwright.sync_api import sync_playwright
 
-URL = "http://localhost:8231/map.html"
+URL = "http://127.0.0.1:8232/map"
 failures = []
 console_errors = []
 

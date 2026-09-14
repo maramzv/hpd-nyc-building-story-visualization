@@ -1,0 +1,70 @@
+/* about.html's own styles, extracted verbatim for the SPA router.
+   The shell (index.html) now owns the :root colour vars, the box-sizing
+   reset, html/body, .page and the whole nav block - those were identical
+   across the three info pages and are the duplication this split removes.
+   Injected only while this view is active, so each page keeps its own
+   cascade (about and data define p.lede differently, for example). */
+/* ---- Content ---- */
+  main { flex: 1; display: flex; justify-content: center; padding: 60px 40px 80px; }
+  .content { max-width: 960px; width: 100%; }
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+    color: var(--teal); text-transform: uppercase; margin-bottom: 18px;
+  }
+  h1 {
+    font-size: 36px; line-height: 1.15; font-weight: 700;
+    letter-spacing: -0.015em; margin: 0 0 24px 0;
+  }
+  h1 .hl { color: var(--teal); }
+  p { font-size: 15px; line-height: 1.7; color: #c3c7d3; margin: 0 0 20px 0; max-width: 680px; }
+  p.lede { font-size: 16.5px; color: #dfe2ea; }
+  blockquote {
+    max-width: 680px;
+    margin: 28px 0; padding: 18px 24px;
+    border-left: 3px solid var(--teal);
+    background: rgba(64,216,200,0.06);
+    font-size: 16px; line-height: 1.6; color: #e8eaf0; font-style: italic;
+  }
+  h2 { font-size: 18px; font-weight: 700; margin: 44px 0 16px 0; color: #e8eaf0; }
+
+  .zoom-path {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-size: 13px; font-weight: 700; margin: 8px 0 24px;
+  }
+  .zoom-path .arrow { color: #6b7186; font-weight: 400; }
+  .lens-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0 28px; }
+  .lens-card {
+    flex: 1 1 130px;
+    background: rgba(18,20,28,0.72);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .lens-card .name { font-size: 13px; font-weight: 700; color: #e8eaf0; }
+  .lens-card .desc { font-size: 12px; color: #9aa1b2; margin-top: 5px; line-height: 1.5; }
+
+  .split { display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0 8px; }
+  .card {
+    flex: 1 1 300px;
+    background: rgba(18,20,28,0.72);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 22px 24px;
+  }
+  .card .tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .card.is-yes .tag { color: var(--teal); }
+  .card.is-no .tag { color: #8b91a0; }
+  .card ul { margin: 0; padding-left: 18px; }
+  .card li { font-size: 14px; line-height: 1.7; color: #c3c7d3; margin-bottom: 6px; }
+
+  footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 40px 26px; font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #7d8395; flex-wrap: wrap; gap: 8px;
+  }
+
+  @media (max-width: 720px) {
+    main { padding: 40px 20px 60px; }
+    h1 { font-size: 28px; }
+    footer { padding: 18px 20px 24px; }
+  }
