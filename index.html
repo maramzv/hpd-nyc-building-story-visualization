@@ -64,6 +64,13 @@
      body.in-map and the button would stay hidden. */
   body.info-open #site-nav .lp-explore-btn { visibility: visible; pointer-events: auto; }
   html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: #0b0e14; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  /* Reserve the scrollbar gutter always, so #site-nav's right-aligned group
+     (right:0, measured against the viewport) sits at the same x position on
+     every page - otherwise the home/map pages (document can scroll, landing
+     content sometimes exceeds viewport height) render ~17px narrower than
+     the info pages (#info-view clips its own scroll, so the document never
+     does), and the nav visibly shifts sideways between them. */
+  html { scrollbar-gutter: stable; }
   #panel {
     position: absolute; top: calc(var(--nav-h) + 2px); left: 16px; width: 320px;
     background: rgba(18, 20, 28, 0.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
@@ -461,19 +468,16 @@
   #site-nav .lp-nav-links a { color: #dfe2ea; text-decoration: none; font-size: 14px; opacity: 0.85; }
   #site-nav .lp-nav-links a:hover { opacity: 1; }
   #site-nav .lp-explore-btn {
-    display: inline-flex; align-items: center; gap: 8px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     background: transparent; color: #e8eaf0;
     border: 1px solid rgba(255,255,255,0.55); border-radius: 999px;
     padding: 10px 18px; font: inherit; font-size: 14px; font-weight: 500;
     line-height: normal; text-decoration: none; cursor: pointer;
+    /* Fixed so its box is identical on every page (home/about/data/methodology/map) -
+       only the map page's text inside it changes. */
+    width: 172px;
   }
   #site-nav .lp-explore-btn:hover { border-color: #40d8c8; box-shadow: 0 0 0 1px #40d8c8 inset; color: #fff; }
-  /* Once inside the map, "Explore the map" is redundant - the logo is the
-     way back out instead (see showLanding()). */
-  /* visibility, not display: none - keeps its layout box reserved so the
-     nav-links group to its left never shifts position between the landing
-     screen and the map view. */
-  body.in-map #site-nav .lp-explore-btn { visibility: hidden; pointer-events: none; }
 
   #landing {
     position: absolute; inset: 0; z-index: 100;
@@ -2203,10 +2207,20 @@ function wireLandingBoroughPills() {
 // Shared by "Explore the map", the borough pills, and the landing search box -
 // dismisses the landing screen and resets the camera to the pre-flyover start
 // so whatever comes next (a cinematic entrance or a direct flyTo) reads clean.
+// The nav's "Explore the map" button doubles as the map view's own label -
+// "Exit Map View" there, unchanged everywhere else - even though it isn't
+// wired to leave the map yet.
+function updateExploreBtnLabel() {
+  const btn = document.getElementById('landing-enter');
+  if (btn) btn.textContent = document.body.classList.contains('in-map')
+    ? 'Exit Map View →' : 'Explore the map →';
+}
+
 function enterFromLanding() {
   document.getElementById('landing').classList.add('hidden');
   document.body.classList.remove('info-open');
   document.body.classList.add('in-map');
+  updateExploreBtnLabel();
   // Every route into the map - this button, a borough pill, the landing
   // search - funnels through here, so pushing the URL here means none of
   // those callers has to know the router exists. ROUTER_APPLYING guards the
@@ -2221,6 +2235,7 @@ function enterFromLanding() {
 function showLanding() {
   document.getElementById('landing').classList.remove('hidden');
   document.body.classList.remove('in-map', 'info-open');
+  updateExploreBtnLabel();
   if (!window.ROUTER_APPLYING) routerPush('/');
 }
 
@@ -2474,8 +2489,12 @@ fetchJSON(WEB + 'summary.json')
     renderSearch(data, map);
 
     document.getElementById('landing-enter').onclick = () => {
-      enterFromLanding();
-      flyInFromStart();
+      if (document.body.classList.contains('in-map')) {
+        showLanding();
+      } else {
+        enterFromLanding();
+        flyInFromStart();
+      }
     };
     document.getElementById('brand-home-btn').onclick = showLanding;
 
@@ -2831,6 +2850,7 @@ fetchJSON(WEB + 'summary.json')
       if (qs.get('cam')) {
         document.getElementById('landing').classList.add('hidden');
         document.body.classList.add('in-map');
+        updateExploreBtnLabel();
         const [lng, lat, zoom, pitch, bearing] = qs.get('cam').split(',').map(Number);
         map.jumpTo({ center: [lng, lat], zoom, pitch: pitch || 0, bearing: bearing || 0 });
       } else if (onMapRoute || qs.get('explore')) {
@@ -2988,6 +3008,8 @@ function applyRoute(path) {
   highlightNav(path);
 
   if (route.view === 'info') {
+    document.body.classList.remove('in-map');
+    updateExploreBtnLabel();
     renderInfoView(route.page)
       .then(() => { document.body.classList.add('info-open'); })
       .catch(err => {
