@@ -25,6 +25,10 @@ README.md
 # landing summary); map_dataset.json/footprints.json are its inputs and are
 # never served.
 data/*
-!data/web/
+# Negating the directory alone (!data/web/) does not reliably unignore its
+# contents on Vercel's ignore matcher - unlike plain .gitignore semantics,
+# it left every file inside 404ing on the live deploy even though they were
+# tracked in git. The glob has to target the files directly.
+!data/web/**
 !data/neighborhoods.json
 !data/nyc_boundary.geojson
