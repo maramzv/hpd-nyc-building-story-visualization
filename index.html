@@ -481,6 +481,23 @@
     width: 172px;
   }
   #site-nav .lp-explore-btn:hover { border-color: #40d8c8; box-shadow: 0 0 0 1px #40d8c8 inset; color: #fff; }
+  /* The map view has no gradient behind #site-nav (unlike the landing page),
+     so light building tiles or a bright basemap can wash out the white
+     wordmark/logo/links/button - a dark drop shadow keeps them legible
+     against any tile color underneath. */
+  body.in-map #site-nav .lp-brand svg { filter: drop-shadow(0 1px 3px rgba(0,0,0,0.85)); }
+  body.in-map #site-nav .lp-brand .lp-name,
+  body.in-map #site-nav .lp-nav-links a,
+  body.in-map #site-nav .lp-explore-btn { text-shadow: 0 1px 4px rgba(0,0,0,0.85), 0 0 10px rgba(0,0,0,0.5); }
+  body.in-map #site-nav .lp-explore-btn { box-shadow: 0 1px 6px rgba(0,0,0,0.4); }
+  /* The About/Data/Methodology links read as dim grey against the map's
+     lighter tiles - bump them to bright white here only, since the landing
+     page's dark gradient backdrop keeps the dimmer grey readable there. */
+  body.in-map #site-nav .lp-nav-links a { color: #fff; opacity: 1; }
+  body.in-map #site-nav .lp-nav-links a:hover {
+    color: var(--teal);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.95), 0 0 14px rgba(0,0,0,0.8);
+  }
 
   #landing {
     position: absolute; inset: 0; z-index: 100;
