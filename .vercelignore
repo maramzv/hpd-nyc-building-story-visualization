@@ -18,17 +18,25 @@ docs/
 .claude/
 README.md
 
-# data/ holds many large intermediate/raw pipeline files (some 1GB+) that
-# .gitignore normally keeps out of git - only what the site actually fetches
-# should be uploaded. data/web/ is the built output of
-# scripts/build_web_data.py (per-borough building + footprint slices and the
-# landing summary); map_dataset.json/footprints.json are its inputs and are
-# never served.
-data/*
-# Negating the directory alone (!data/web/) does not reliably unignore its
-# contents on Vercel's ignore matcher - unlike plain .gitignore semantics,
-# it left every file inside 404ing on the live deploy even though they were
-# tracked in git. The glob has to target the files directly.
-!data/web/**
+# data/ holds many large intermediate/raw pipeline files (some 1GB+, same
+# ones .gitignore keeps out of git) that must never reach the deploy. Matched
+# by extension rather than a blanket "data/*" - confirmed via an actual build
+# log (vercel inspect --logs) that "data/*" plus a negation for data/web/
+# (tried both !data/web/ and !data/web/**, together and separately) still had
+# Vercel's ignore matcher strip every file under data/web/. A glob like
+# "data/*.json" can't match "data/web" at all (a directory, no extension), so
+# data/web/ is never touched by these rules in the first place - no negation
+# needed, nothing for that matcher bug to mishandle. data/web/ is the built
+# output of scripts/build_web_data.py (per-borough building + footprint
+# slices and the landing summary); map_dataset.json/footprints.json are its
+# raw inputs and are correctly excluded by these same patterns.
+data/*.csv
+data/*.json
+data/*.geojson
+data/*.bak
+data/*.superseded*
+data/*.pre-geocode
+data/*.pre-lens-metrics
+data/sample2983_backup/
 !data/neighborhoods.json
 !data/nyc_boundary.geojson
