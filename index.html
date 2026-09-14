@@ -1362,6 +1362,7 @@ function renderEvidence(records) {
   const tableEl = document.getElementById('evidence-table');
   countEl.textContent = `${records.length} record${records.length !== 1 ? 's' : ''} on file — every one shown, in full.`;
   tableEl.classList.add('open');
+  tableEl.scrollTop = 0;
   const today = new Date();
   tableEl.innerHTML = records.map(r => {
     const clsSpan = ['A', 'B', 'C', 'I'].includes(r.class)
@@ -1603,6 +1604,7 @@ let relayoutTimeline = () => {};
 
 function renderTimeline(records) {
   const body = document.getElementById('timeline-body');
+  body.scrollTop = 0;
   const notices = buildTimeline(records);
   if (!notices.length) {
     body.innerHTML = `<div id="timeline-empty">No violations on record for this building.</div>`;
@@ -1733,6 +1735,12 @@ document.querySelectorAll('#story-tabs button').forEach(btn => {
     document.querySelectorAll('.tab-pane').forEach(p =>
       p.classList.toggle('active', p.id === 'tab-' + btn.dataset.tab));
     document.getElementById('panel').scrollTop = 0;
+    // Reset the pane's own inner scroll too, now that it's actually visible -
+    // setting scrollTop while a pane is display:none (as it is right after a
+    // new building resets to the Story tab) doesn't reliably stick, so the
+    // stale position can resurface here when the tab is clicked back open.
+    document.getElementById('evidence-table').scrollTop = 0;
+    document.getElementById('timeline-body').scrollTop = 0;
     if (btn.dataset.tab === 'timeline') relayoutTimeline();
   });
 });
@@ -2054,8 +2062,10 @@ function renderSkeleton() {
   document.getElementById('d-dims').innerHTML = Array.from({ length: 6 }).map(() =>
     `<div class="dim-card"><div class="skel skel-k"></div><div class="skel skel-v"></div></div>`
   ).join('');
-  document.getElementById('timeline-body').innerHTML =
+  const timelineBody = document.getElementById('timeline-body');
+  timelineBody.innerHTML =
     `<div class="skel skel-line" style="width:70%"></div><div class="skel skel-line" style="width:90%"></div><div class="skel skel-line" style="width:55%"></div>`;
+  timelineBody.scrollTop = 0;
 }
 
 /** d = the lightweight, batch-computed dot data (position/pattern/scale/neighborhood).
@@ -2065,6 +2075,7 @@ function showDetail(d) {
   const myRequestId = ++currentRequestId;
   markSelected(d);
   showStory(d.neighborhood, d.boro);
+  document.getElementById('panel').scrollTop = 0;
 
   renderHeadline(d.pattern, d.scale);
   document.getElementById('d-addr').textContent = d.address;
@@ -2073,7 +2084,9 @@ function showDetail(d) {
   resetTabs();
   renderSimilar(d.buildingid, d.pattern, d.neighborhood);
   document.getElementById('evidence-count').textContent = '';
-  document.getElementById('evidence-table').innerHTML = '';
+  const evidenceTableEl = document.getElementById('evidence-table');
+  evidenceTableEl.innerHTML = '';
+  evidenceTableEl.scrollTop = 0;
 
   const url = `https://data.cityofnewyork.us/resource/csn4-vhvf.json?$where=buildingid='${d.buildingid}'&$limit=5000`;
   fetch(url)
