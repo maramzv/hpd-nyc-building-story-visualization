@@ -7,6 +7,9 @@
 <title>NYC Building Stories</title>
 <meta name="description" content="Every apartment building in New York City, told through its own housing-violation record.">
 <link rel="canonical" href="/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
 <!-- Same colored bars as the nav's #brand-home-btn logo, just re-cropped
      square so it reads clearly at favicon size. -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'%3E%3Crect x='0' y='22' width='4.5' height='12' fill='rgb(220,70,60)'/%3E%3Crect x='7.5' y='14' width='4.5' height='20' fill='rgb(230,180,60)'/%3E%3Crect x='15' y='18' width='4.5' height='16' fill='rgb(64,216,200)'/%3E%3Crect x='22.5' y='10' width='4.5' height='24' fill='rgb(66,133,224)'/%3E%3Crect x='30' y='25' width='4' height='9' fill='rgb(80,170,70)'/%3E%3C/svg%3E">
@@ -472,6 +475,8 @@
   #site-nav .lp-nav-right { display: flex; align-items: center; gap: 28px; margin-left: auto; }
   #site-nav .lp-nav-links { display: flex; align-items: center; gap: 28px; }
   #site-nav .lp-nav-links a { color: #dfe2ea; text-decoration: none; font-size: 14px; opacity: 0.85; }
+  /* Home page only - brighter palette match; map/info pages keep the color above. */
+  body:not(.in-map):not(.info-open) #site-nav .lp-nav-links a { color: #E8EAF0; opacity: 0.95; }
   #site-nav .lp-nav-links a:hover { opacity: 1; }
   #site-nav .lp-explore-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -516,31 +521,33 @@
     color: #e8eaf0;
     background:
       linear-gradient(90deg, rgba(4,6,10,0.75) 0%, rgba(4,6,10,0.45) 30%, rgba(4,6,10,0.05) 55%, rgba(4,6,10,0) 75%),
-      url("assets/landing-bg.png") center right / cover no-repeat;
+      url("assets/landing-bg.png") top right / cover no-repeat;
   }
   #landing.hidden, body.in-map #landing { display: none; }
   #landing * { box-sizing: border-box; }
 
-  #landing .lp-main { flex: 1; display: flex; align-items: center; padding: calc(var(--nav-h) + 20px) 40px 60px; }
-  #landing .lp-hero { max-width: 720px; }
+  #landing { overflow: hidden; }
+  #landing .lp-main { flex: 1; display: flex; align-items: flex-start; padding: calc(var(--nav-h) + 12px) 40px 14px; overflow: hidden; }
+  #landing .lp-hero { max-width: 900px; }
   #landing .lp-eyebrow {
-    font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
-    text-transform: uppercase; margin-bottom: 18px;
+    font-size: 13.5px; font-weight: 500; letter-spacing: 0.14em;
+    text-transform: uppercase; margin-bottom: 14px;
   }
-  #landing .lp-eyebrow .lp-arrow { color: #6b7186; font-weight: 400; }
+  #landing .lp-eyebrow .lp-arrow { color: #b8bbc2; font-weight: 400; }
   #landing h1 {
-    font-size: 44px; line-height: 1.12; font-weight: 700;
-    letter-spacing: -0.015em; margin: 0 0 18px 0;
+    font-family: "DM Serif Display", Georgia, serif; color: #FFFFFF;
+    font-size: clamp(48px, 9.8vh, 92px); line-height: 1.04; font-weight: 400;
+    letter-spacing: 0.01em; margin: 0 0 16px 0;
   }
-  #landing h1 .lp-hl { color: #40d8c8; }
-  #landing .lp-lede { font-size: 15.5px; line-height: 1.65; color: #c3c7d3; max-width: 520px; margin: 0 0 28px 0; }
+  #landing h1 .lp-hl { color: #26EDE2; }
+  #landing .lp-lede { font-family: Georgia, serif; font-size: 14.5px; line-height: 1.5; color: #b3b9c2; max-width: 660px; margin: 0 0 14px 0; }
 
-  #landing .lp-search-wrap { position: relative; max-width: 460px; margin-bottom: 0px; }
+  #landing .lp-search-wrap { position: relative; max-width: 490px; margin-bottom: 0px; }
   #landing .lp-search {
     display: flex; align-items: center;
     background: rgba(20,23,32,0.75);
     border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 999px; padding: 6px 6px 6px 20px;
+    border-radius: 999px; padding: 7px 7px 7px 22px;
     backdrop-filter: blur(6px);
     transition: border-color 0.25s ease;
   }
@@ -580,20 +587,21 @@
   #landing .lp-search-result span:first-child { color: #d0d3dd; }
   #landing .lp-search input {
     flex: 1; background: none; border: none; outline: none;
-    color: #e8eaf0; font-size: 14px; padding: 8px 0;
+    color: #e8eaf0; font-size: 14.5px; padding: 9px 0;
     font-family: inherit;
   }
   #landing .lp-search input::placeholder { color: #7d8395; }
   #landing .lp-search button {
-    width: 36px; height: 36px; border-radius: 50%; border: none;
+    width: 38px; height: 38px; border-radius: 50%; border: none;
     background: #40d8c8; color: #06141a;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0;
   }
   #landing .lp-search button:hover { opacity: 0.9; }
 
-  #landing .lp-boro-label { font-size: 12px; color: #9aa1b2; margin-bottom: 12px; }
-  #landing .lp-boro-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px; }
+  #landing .lp-boro-inline { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+  #landing .lp-boro-label { font-size: 12px; color: #9aa1b2; white-space: nowrap; }
+  #landing .lp-boro-row { display: flex; gap: 10px; flex-wrap: wrap; }
   #landing .lp-boro-row button {
     background: transparent; color: #e8eaf0;
     border: 1px solid rgba(255,255,255,0.28);
@@ -603,22 +611,34 @@
   #landing .lp-boro-row button:hover,
   #landing .lp-boro-row button.active { border-color: #40d8c8; box-shadow: 0 0 0 1px #40d8c8 inset; color: #fff; }
 
-  #landing .lp-stats-label { font-size: 11px; color: #9aa1b2; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; margin-top: 70px; }
-  #landing .lp-stats { display: flex; gap: 16px; flex-wrap: nowrap; }
-  #landing .lp-stat {
-    flex: 1 1 0; min-width: 0; max-width: 118px; padding-left: 16px;
-    border-left: 1px solid rgba(255,255,255,0.18);
+  #landing .lp-stats-label {
+    font-size: 11.5px; font-weight: 600; color: #9aa1b2; text-transform: uppercase;
+    letter-spacing: 0.08em; margin-top: 30px; margin-bottom: 14px;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.85);
   }
-  #landing .lp-stat:first-child { padding-left: 0; border-left: none; }
-  #landing .lp-stat .lp-num { font-size: 22px; font-weight: 700; line-height: 1.1; }
-  #landing .lp-stat .lp-lbl { font-size: 9.5px; color: #e8eaf0; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 6px; font-weight: 700; }
-  #landing .lp-stat .lp-desc { font-size: 11px; color: #8b91a0; line-height: 1.35; margin-top: 5px; }
+  #landing .lp-stats { display: flex; gap: 26px; flex-wrap: nowrap; }
+  #landing .lp-stat {
+    flex: 1 1 0; min-width: 0; max-width: 150px; padding-left: 14px;
+    border-left: 1px solid rgba(255,255,255,0.18);
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  #landing .lp-stat .lp-num {
+    font-family: "DM Serif Display", Georgia, serif; font-size: 26px; font-weight: 400;
+    line-height: 1; letter-spacing: 0.01em; font-variant-numeric: tabular-nums;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.85);
+  }
+  #landing .lp-stat .lp-lbl {
+    font-size: 10.5px; color: #e8eaf0; text-transform: uppercase; letter-spacing: 0.05em;
+    font-weight: 700; white-space: nowrap; text-shadow: 0 2px 6px rgba(0,0,0,0.85);
+  }
+  #landing .lp-stat .lp-desc { font-size: 11px; color: #dfe2e9; line-height: 1.3; text-shadow: 0 2px 6px rgba(0,0,0,0.85); }
 
   @media (max-width: 720px) {
     #site-nav { padding: 18px 20px; }
     #site-nav .lp-nav-links { display: none; }
     #landing .lp-main { padding: calc(var(--nav-h) + 10px) 20px 40px; }
-    #landing h1 { font-size: 32px; }
+    #landing .lp-stats { flex-wrap: wrap; }
+    #landing h1 { font-size: 36px; }
   }
 
   /* Lens picker: one segmented control, bottom-centre. 'Buildings' draws real
@@ -768,23 +788,23 @@
   <main class="lp-main">
     <div class="lp-hero">
       <div class="lp-eyebrow">
-        <span style="color: rgb(64,216,200)">Citywide</span> <span class="lp-arrow">&rsaquo;</span>
-        <span style="color: rgb(66,133,224)">Borough</span> <span class="lp-arrow">&rsaquo;</span>
-        <span style="color: rgb(230,180,60)">Neighborhood</span> <span class="lp-arrow">&rsaquo;</span>
-        <span style="color: rgb(220,70,60)">Building</span>
+        <span style="color: rgb(29,233,235)">New York City</span> <span class="lp-arrow">&rsaquo;</span>
+        <span style="color: rgb(60,155,255)">Borough</span> <span class="lp-arrow">&rsaquo;</span>
+        <span style="color: rgb(248,184,20)">Neighborhood</span> <span class="lp-arrow">&rsaquo;</span>
+        <span style="color: rgb(224,55,50)">Building</span>
       </div>
-      <h1>What is happening<br>to <span class="lp-hl">NYC's buildings?</span></h1>
+      <h1>What is<br>happening to<br><span class="lp-hl">NYC's buildings?</span></h1>
       <p class="lp-lede">
-        Every colored column is a real NYC building with at least one open
-        housing violation on record. Explore the stories hidden in the city's
-        housing records, from the citywide pattern down to a single address.
+        Every colored column is a real NYC building with at least one open housing<br>
+        violation on record. Explore the stories hidden in the city's housing records,<br>
+        from the citywide pattern down to a single address.
       </p>
 
       <div class="lp-search-wrap">
         <div class="lp-search">
           <input type="text" placeholder="Search an address or building..." id="landing-search-box" autocomplete="off">
           <button aria-label="Search" id="landing-search-go">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path d="M5 12h14M13 6l6 6-6 6"/>
             </svg>
           </button>
@@ -793,13 +813,15 @@
         <div class="lp-search-no-match" id="landing-search-no-match">No open violations on record for this address</div>
       </div>
 
-      <div class="lp-boro-label">Or explore by borough:</div>
-      <div class="lp-boro-row" id="landing-boro-row">
-        <button data-boro="MANHATTAN">Manhattan</button>
-        <button data-boro="BROOKLYN">Brooklyn</button>
-        <button data-boro="QUEENS">Queens</button>
-        <button data-boro="BRONX">Bronx</button>
-        <button data-boro="STATEN ISLAND">Staten Island</button>
+      <div class="lp-boro-inline">
+        <span class="lp-boro-label">Or explore by borough:</span>
+        <div class="lp-boro-row" id="landing-boro-row">
+          <button data-boro="MANHATTAN">Manhattan</button>
+          <button data-boro="BROOKLYN">Brooklyn</button>
+          <button data-boro="QUEENS">Queens</button>
+          <button data-boro="BRONX">Bronx</button>
+          <button data-boro="STATEN ISLAND">Staten Island</button>
+        </div>
       </div>
 
       <div class="lp-stats-label" id="landing-stats-label">Loading citywide pattern&hellip;</div>
@@ -820,6 +842,16 @@ const PATTERN_COLORS = {
   "Widespread": [66, 133, 224],
   "Persistent": [230, 180, 60],
   "Chronic":    [220, 70, 60],
+};
+// Brighter versions of PATTERN_COLORS used only on the landing page's
+// breadcrumb/headline/stats - the map keeps the calmer PATTERN_COLORS above
+// since those colors also have to sit behind hundreds of overlapping columns.
+const LANDING_COLORS = {
+  "No real defects": [105, 218, 80],
+  "Isolated":   [29, 233, 235],
+  "Widespread": [60, 155, 255],
+  "Persistent": [248, 184, 20],
+  "Chronic":    [224, 55, 50],
 };
 const PATTERN_LABELS = {
   "No real defects": "No real defects — administrative filings only",
@@ -2222,10 +2254,10 @@ function renderLanding(summary) {
   document.getElementById('landing-stats-label').textContent =
     `Citywide pattern, ${total.toLocaleString()} buildings analyzed:`;
   document.getElementById('landing-stats').innerHTML = PATTERN_ORDER.map(p => `
-    <div class="lp-stat">
-      <div class="lp-num" style="color: rgb(${PATTERN_COLORS[p].join(',')})">${((counts[p]/total)*100).toFixed(1)}%</div>
+    <div class="lp-stat" style="border-left-color: rgb(${LANDING_COLORS[p].join(',')})">
+      <div class="lp-num" style="color: rgb(${LANDING_COLORS[p].join(',')})">${((counts[p]/total)*100).toFixed(1)}%</div>
       <div class="lp-lbl">${p}</div>
-      <div class="lp-desc">${PATTERN_SHORT_DESC[p]}</div>
+      <div class="lp-desc">${PATTERN_SHORT_DESC[p].replace(', ', ',<br>')}</div>
     </div>`).join('');
 }
 
