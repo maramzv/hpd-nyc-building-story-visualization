@@ -1,202 +1,237 @@
 <main>
     <div class="content">
       <div class="eyebrow">About</div>
-      <h1>Open violations hold the <span class="hl">evidence.</span><br>Patterns reveal the shape of a city.</h1>
+      <h1>Open violations hold the <span class="hl">evidence.</span><br>Patterns make it readable.</h1>
 
       <p class="lede">
-        NYC's Open HPD Violations dataset holds
-        millions of housing-violation records. On their own, that's just a
-        pile of rows. Understanding what they actually say about any one
-        building is the harder problem, and the one this project exists to answer.
+        <strong>NYC Building Stories</strong> is an interactive data investigation
+        of New York City's currently open HPD housing violations. It turns
+        millions of public records into citywide patterns and building-level
+        stories, while keeping the underlying evidence close enough to inspect.
       </p>
 
       <blockquote>
-        <p style="margin: 0 0 14px; font-style: italic;">What is happening to NYC's buildings?</p>
-        <p style="margin: 0; font-style: normal; font-size: 14px; color: #c3c7d3;">
-          <strong style="color: #e8eaf0;">NYC Building Stories</strong> reads
-          millions of housing-violation records for what recurs, what
-          escalates, and what quietly persists, then makes every finding
-          traceable back to the record it came from, from a single address
-          to the city as a whole.
+        <p class="quote-q">What can open housing-violation records tell us about the way problems appear, recur, and persist across NYC buildings?</p>
+        <p class="quote-sub">
+          The project does not try to reduce a building to a score. It asks what
+          kind of record the building has, how that record has changed over
+          time, and how it compares with patterns visible across the city.
         </p>
       </blockquote>
 
-      <p>
-        Not "this building has 42 violations." A raw count says almost
-        nothing on its own. We're after the transformations that turn a pile
-        of records into an actual pattern: recurrence, persistence, severity,
-        concentration, and change over time. Those are the shapes that make
-        one building's story different from another's, even when their
-        violation counts look the same.
-      </p>
-
-      <p>
-        The site is built around that idea, top to bottom: start at the
-        citywide pattern, narrow to a borough, then a neighborhood, then a
-        single building. At every zoom level, the claim being made
-        is only as strong as the evidence behind it. Every building's story
-        links back to the actual violation records it was generated from, so
-        the underlying evidence is never more than a click away.
-      </p>
-
-      <h2>Why patterns beat raw counts</h2>
-      <p>
-        Two buildings can carry the same number on paper and mean something
-        completely different underneath it. That's the reason this project
-        measures recurrence and severity separately instead of folding them
-        into one score:
-      </p>
-      <div class="example-grid">
-        <div class="example-card">
-          <div class="ex-tag ex-teal">Isolated · Extreme severity</div>
-          <p>
-            A single Class C violation, an immediately hazardous condition
-            like no heat or a gas leak, with nothing else on record. It's
-            dangerous right now, but there's no history of it, or anything
-            else, recurring.
-          </p>
-        </div>
-        <div class="example-card">
-          <div class="ex-tag ex-red">Chronic · Low severity</div>
-          <p>
-            The same non-hazardous defect cited ten or more times over five
-            years. Nothing about it is immediately dangerous, but it's gone
-            unresolved for the better part of a decade.
-          </p>
-        </div>
-      </div>
-      <p>
-        Both are real, and neither one is "worse" in a way a single number
-        could capture. Treating them the same would erase the exact
-        distinction the records are making.
-      </p>
-
-      <h2>Four zoom levels, one question</h2>
-      <p>
-        The map is built as a drill-down, and each level answers a
-        different scope of the same question:
-      </p>
       <div class="zoom-path">
         <span style="color: var(--teal)">Citywide</span> <span class="arrow">→</span>
         <span style="color: var(--blue)">Borough</span> <span class="arrow">→</span>
         <span style="color: var(--yellow)">Neighborhood</span> <span class="arrow">→</span>
         <span style="color: var(--red)">Building</span>
       </div>
+
+      <h2>Why build this?</h2>
       <p>
-        Click a borough and the map flies there while its row expands to
-        show its top neighborhoods. Click a neighborhood to fly in closer.
-        Click any building's 3D column for its full evidence-based story,
-        or search an address directly if you already know where
-        you're headed. A "Why we're saying this" link on every building
-        opens the actual violation records the story was built from.
+        NYC Open Data makes the underlying records public, but a row-by-row
+        feed is difficult to read as a building story. One row can tell you
+        what one violation is, when it was issued, and its current status.
+        What it doesn't tell you on its own is whether the same problem keeps
+        returning, whether a building's open record is mostly recent or
+        dominated by older unresolved violations, whether severe violations
+        make up a meaningful share, or whether the building's pattern is
+        common or unusual in its neighborhood.
+      </p>
+      <p>
+        Even a raw violation count doesn't solve that problem. A building with
+        40 open violations might have dozens of unrelated one-time issues,
+        while another building with the same count might show the same defect
+        returning again and again over many years. The number is identical;
+        the underlying story isn't.
+      </p>
+      <p>
+        And at city scale, the problem gets harder. Millions of individual
+        records make it possible to look up what happened, but not easy to
+        see the larger structure inside the data: which problems recur, where
+        long-running patterns concentrate, how recent activity differs from
+        old backlog, or when high volume reflects many separate issues rather
+        than one problem repeating.
+      </p>
+      <p>
+        That's the gap this project is designed to close. It groups records
+        by building, separates different dimensions of the record, and looks
+        for patterns that raw counts flatten together.
       </p>
 
-      <h2>Five ways to look at the same buildings</h2>
-      <p>
-        The height of every column on the map is a choice, not a fixed
-        property of the data. You can switch what it represents:
-      </p>
-      <div class="lens-grid">
-        <div class="lens-card"><div class="name">Buildings</div><div class="desc">Real height, from NYC footprint data.</div></div>
-        <div class="lens-card"><div class="name">Violations</div><div class="desc">Count of currently open violations.</div></div>
-        <div class="lens-card"><div class="name">Age</div><div class="desc">Years past deadline for the oldest open item.</div></div>
-        <div class="lens-card"><div class="name">Severity</div><div class="desc">Count of Class C (immediately hazardous) violations.</div></div>
-        <div class="lens-card"><div class="name">Recent</div><div class="desc">Violations issued in the last 2 years.</div></div>
+      <div class="example-grid">
+        <div class="example-card">
+          <div class="ex-tag ex-teal">Isolated · Extreme severity</div>
+          <p>
+            A building may have a single currently open Class C violation,
+            HPD's immediately hazardous category, with no recurring defect
+            visible in the open record.
+          </p>
+        </div>
+        <div class="example-card">
+          <div class="ex-tag ex-red">Chronic · Low severity</div>
+          <p>
+            Another building may have the same non-hazardous defect cited ten
+            or more times across at least five years. The individual
+            violations may be lower severity, but the recurrence tells a very
+            different story.
+          </p>
+        </div>
       </div>
       <p>
-        The color underneath never changes: it's always the Pattern
-        bucket (see <a href="/methodology" style="color: var(--teal);">Methodology</a>).
-        Only what the height means changes.
+        A single number can't describe both cases well. That's why this
+        project keeps recurrence, severity, recency, scale, engagement, and
+        backlog age separate instead of collapsing them into one rating.
       </p>
 
-      <h2>A model shaped by testing</h2>
+      <h2>What can I investigate?</h2>
       <p>
-        The pattern taxonomy wasn't fixed in advance. It changed as testing
-        against the full citywide dataset exposed cases the earlier version
-        couldn't represent:
+        The project moves from citywide patterns to the individual records
+        behind a building's story. You can start by asking what's happening
+        across New York City, then narrow the view from borough to
+        neighborhood to a single building and inspect the evidence behind
+        what you see.
       </p>
-      <ol class="model-steps">
-        <li>
-          <span class="step-n">01</span>
-          <div><strong>Start with recurrence.</strong> An early three-bucket
-          model, Isolated, Persistent, and Chronic, grouped violations by
-          building and looked for the same defect code recurring over time.</div>
-        </li>
-        <li>
-          <span class="step-n">02</span>
-          <div><strong>Expand to the full population.</strong> Testing across
-          all 166,000+ buildings surfaced two missing cases, buildings with
-          only administrative filings and buildings with many one-off
-          defects but no repeat, which became <em>No real defects</em> and
-          <em>Widespread</em>.</div>
-        </li>
-        <li>
-          <span class="step-n">03</span>
-          <div><strong>Move recurrence to the building level.</strong> The
-          same defect showing up across different apartments in one building
-          is still one recurring problem, not several unrelated ones.</div>
-        </li>
-        <li>
-          <span class="step-n">04</span>
-          <div><strong>Stop compressing into one label.</strong> Scale,
-          recency, severity, engagement, pattern, and backlog age move
-          independently, so the final model reports all six rather than
-          collapsing them into a single score.</div>
-        </li>
-      </ol>
-
-      <h2>What the patterns reveal</h2>
-      <p>
-        Once recurrence is separated from raw volume, it stops being evenly
-        spread across the map.
-      </p>
-      <div class="stat-highlight">
-        <div class="stat-num">2.7×</div>
-        <div class="stat-body">
-          Persistent and Chronic patterns show up in roughly 26% of mapped
-          buildings with an open violation in the Bronx and Manhattan,
-          versus about 10% in Queens and Staten Island. In a few
-          neighborhoods in northern Manhattan and the west Bronx, it's over
-          half. That's a pattern in the records, not an explanation for it:
-          ownership, enforcement, and reporting behavior are outside this
-          dataset's scope. Full breakdown in <a href="/methodology" style="color: var(--teal);">Methodology</a>.
+      <div class="split">
+        <div class="card is-yes">
+          <div class="tag">Across the city</div>
+          <ul>
+            <li>Where are recurring building problems most concentrated?</li>
+            <li>How do violation patterns differ across boroughs and neighborhoods?</li>
+            <li>Where does high violation volume reflect recurrence, and where does it not?</li>
+            <li>How does one building compare with the area around it?</li>
+          </ul>
+        </div>
+        <div class="card is-yes">
+          <div class="tag">At a building</div>
+          <ul>
+            <li><strong>Scale:</strong> is the open record small or extensive?</li>
+            <li><strong>Recency:</strong> are violations mostly recent, or does the record stretch back years?</li>
+            <li><strong>Severity:</strong> how much of the record is Class C, HPD's highest hazard class?</li>
+            <li><strong>Engagement:</strong> has the owner been responding to violations?</li>
+            <li><strong>Pattern:</strong> does the same kind of defect keep reappearing?</li>
+            <li><strong>Backlog age:</strong> how far back do the oldest open violations go?</li>
+            <li><strong>Evidence:</strong> what individual records produced the building's story?</li>
+            <li><strong>Timeline:</strong> how has the record unfolded over time?</li>
+          </ul>
         </div>
       </div>
 
-      <h2>Who this is for</h2>
+      <h2>How do I read the visualization?</h2>
       <p>
-        Anyone trying to understand NYC housing conditions through public
-        data, with an evidence-backed exploration of what the data shows,
-        not a curated argument for a conclusion decided in advance.
+        Two visual encodings are working at the same time.
+        <strong>Color describes the building's pattern.</strong> Height can be
+        switched between different lenses, depending on the question you want
+        to ask.
       </p>
 
+      <div class="map-reading-grid">
+        <div class="map-reading-panel">
+          <div class="panel-title">Color · Pattern</div>
+          <div class="pattern-stack">
+            <div class="pattern-item">
+              <div class="pattern-head"><span class="pattern-dot" style="background: var(--green);"></span><span class="name">No real defects</span></div>
+              <div class="desc">Administrative filings only.</div>
+            </div>
+            <div class="pattern-item">
+              <div class="pattern-head"><span class="pattern-dot" style="background: var(--teal);"></span><span class="name">Isolated</span></div>
+              <div class="desc">A few real defects, none repeated.</div>
+            </div>
+            <div class="pattern-item">
+              <div class="pattern-head"><span class="pattern-dot" style="background: var(--blue);"></span><span class="name">Widespread</span></div>
+              <div class="desc">Many real defects, none repeated.</div>
+            </div>
+            <div class="pattern-item">
+              <div class="pattern-head"><span class="pattern-dot" style="background: var(--yellow);"></span><span class="name">Persistent</span></div>
+              <div class="desc">The same defect, repeated 3+ times.</div>
+            </div>
+            <div class="pattern-item">
+              <div class="pattern-head"><span class="pattern-dot" style="background: var(--red);"></span><span class="name">Chronic</span></div>
+              <div class="desc">The same defect, repeated for years.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-reading-panel">
+          <div class="panel-title">Height · Lens</div>
+          <div class="lens-stack">
+            <div class="pattern-item"><span class="name">Buildings</span><div class="desc">Actual building height, from NYC footprint data.</div></div>
+            <div class="pattern-item"><span class="name">Violations</span><div class="desc">Number of currently open violations.</div></div>
+            <div class="pattern-item"><span class="name">Age</span><div class="desc">How long the oldest open item has been past deadline.</div></div>
+            <div class="pattern-item"><span class="name">Severity</span><div class="desc">Number of currently open Class C violations.</div></div>
+            <div class="pattern-item"><span class="name">Recent</span><div class="desc">Violations issued within the last two years.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <p>
+        <strong>Switching lenses changes height, not color.</strong>
+        A building keeps its Pattern classification across all five lenses.
+      </p>
+
+      <div class="note">
+        <strong>"Chronic" is a pattern in the open violation record, not a
+        building grade.</strong> It means the same specific defect has been
+        cited ten or more times across at least five years. It doesn't mean
+        every condition at the building is dangerous, and it isn't a
+        recommendation about whether someone should live there.
+      </div>
+
+      <h2>Where does the evidence come from?</h2>
+      <p>
+        Building stories aren't meant to be black boxes. The
+        core source is NYC Open Data's <strong>Open HPD Violations</strong>
+        dataset (<code>csn4-vhvf</code>). Records are grouped by building and
+        then used to calculate the dimensions and pattern classification
+        shown in the interface.
+      </p>
+      <p>
+        The building view lets you move from the generated summary to the
+        underlying violation records, including the dates, classes,
+        descriptions, and status history that support it. The
+        <a href="/methodology" style="color: var(--teal);">Methodology</a>
+        page documents how the classifications and thresholds are built, and
+        the <a href="/data" style="color: var(--teal);">Data</a> page
+        documents the source, fields, cleaning rules, and known limitations.
+      </p>
+
+      <h2>What shouldn't I conclude from this?</h2>
       <div class="split">
         <div class="card is-yes">
-          <div class="tag">This is</div>
+          <div class="tag">This project does</div>
           <ul>
-            <li>An honest exploration of a public dataset</li>
-            <li>Patterns tested against real buildings before being shown</li>
-            <li>Full transparency into the records behind every claim</li>
+            <li>Analyze patterns in currently open HPD violations</li>
+            <li>Separate recurrence, severity, recency, scale, engagement, and backlog age</li>
+            <li>Compare building patterns across neighborhoods and boroughs</li>
+            <li>Keep building-level conclusions connected to the records behind them</li>
           </ul>
         </div>
         <div class="card is-no">
-          <div class="tag">This isn't</div>
+          <div class="tag">This project doesn't</div>
           <ul>
-            <li>A "should I live here" score or recommendation engine</li>
-            <li>A ranking of landlords or a legal record</li>
-            <li>A complete picture of building safety or condition</li>
+            <li>Measure the complete safety or condition of a building</li>
+            <li>Rank landlords or recommend where someone should live</li>
+            <li>Explain why a neighborhood or borough has the pattern it does</li>
           </ul>
         </div>
       </div>
-      <p style="margin-top: 12px;">
-        One more limit worth stating plainly: the source feed holds
-        currently open violations, not a full history of every violation
-        ever issued. A building with no recurring defect found here has no
-        <em>open</em> recurring defect, which isn't the same as a clean
-        record. More on that in <a href="/data" style="color: var(--teal);">Data</a>.
+
+      <div class="note">
+        <strong>The most important limitation:</strong> the source feed
+        contains currently open violations, not a complete archive of every
+        violation ever issued and resolved. "No recurring defect found" means
+        no recurring defect is visible in this open-violation feed. It isn't
+        the same thing as a clean historical record or a clean bill of health.
+      </div>
+
+      <h2>Explore, then inspect</h2>
+      <p>
+        Start with the map if
+        you want to see the patterns for yourself. If you want to know how a
+        conclusion was produced, follow it back to the building's Evidence
+        view.
       </p>
 
-      <p style="margin-top: 28px; font-size: 13px; color: #8b91a0;">
+      <p style="font-size: 13px; color: #8b91a0;">
         Curious how the numbers are built or where the buckets come from?
         See <a href="/data" style="color: var(--teal);">Data</a>
         and <a href="/methodology" style="color: var(--teal);">Methodology</a>.
