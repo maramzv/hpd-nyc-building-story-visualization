@@ -66,6 +66,7 @@ main { flex: 1; display: flex; justify-content: center; padding: 60px 40px 80px;
 
   .tl-step-table td, .tl-step-table th { vertical-align: top; }
   .tl-step-table .field { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--teal); white-space: nowrap; }
+  .tl-step-table .when { font-weight: 700; color: #e8eaf0; white-space: nowrap; }
   .tl-step-table .who { font-size: 11px; color: #8b91a0; white-space: nowrap; }
 
   .example-block {

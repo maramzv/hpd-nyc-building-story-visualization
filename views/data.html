@@ -77,22 +77,23 @@
       <h2>The timeline behind a violation</h2>
       <p>
         A violation is not a single event with a single date. HPD's
-        process records it at up to seven distinct points in time, from the
+        process records it at up to nine distinct points in time, from the
         moment an inspector sees the condition to whatever its status is
         today. These are the same fields behind the timeline shown in every
         building's evidence view on the map:
       </p>
       <div class="table-wrap">
       <table class="data-table tl-step-table">
-        <tr><th>Step</th><th>Field</th><th>What it records</th><th>Whose action</th></tr>
-        <tr><td>1. Inspection</td><td class="field">inspectiondate</td><td>An HPD inspector observes the condition in person.</td><td class="who">HPD</td></tr>
-        <tr><td>2. Internal approval</td><td class="field">approveddate</td><td>HPD finalizes the violation record internally, before it's formally issued.</td><td class="who">HPD</td></tr>
-        <tr><td rowspan="2">3. Deadlines set</td><td class="field">originalcorrectbydate</td><td>Deadline to physically fix the condition; length set by <code>class</code>.</td><td class="who">HPD sets, owner must meet</td></tr>
-        <tr><td class="field">originalcertifybydate</td><td>Deadline to tell HPD the fix is done (self-certification), typically shortly after the correct-by date.</td><td class="who">HPD sets, owner must meet</td></tr>
-        <tr><td>4. Notice issued</td><td class="field">novissueddate</td><td>The formal Notice of Violation is sent to the owner.</td><td class="who">HPD</td></tr>
-        <tr><td rowspan="2">5. Owner responds, or doesn't</td><td class="field">certifieddate</td><td>Date the owner actually certified the fix, if they ever did.</td><td class="who">Owner</td></tr>
-        <tr><td class="field">currentstatus / currentstatusdate</td><td>The violation's latest known state, and when it last changed.</td><td class="who">Either party</td></tr>
-        <tr><td>Deadline revisions</td><td class="field">newcorrectbydate / newcertifybydate</td><td>Revised deadlines, e.g. after an extension request or a status change.</td><td class="who">HPD, in response</td></tr>
+        <tr><th>Field</th><th>When it happens</th><th>What it records</th><th>Whose action</th></tr>
+        <tr><td class="field">inspectiondate</td><td class="when">1st</td><td>An HPD inspector visits the property and observes a violation. This is when the violation is officially found.</td><td class="who">HPD</td></tr>
+        <tr><td class="field">approveddate</td><td class="when">2nd</td><td>The violation record is reviewed and officially approved by HPD. This is an administrative step confirming the violation.</td><td class="who">HPD</td></tr>
+        <tr><td class="field">novissueddate</td><td class="when">3rd</td><td>The Notice of Violation (NOV) is sent to the property owner, informing them of the violation and what needs to be fixed.</td><td class="who">HPD</td></tr>
+        <tr><td class="field">originalcorrectbydate</td><td class="when">4th</td><td>The original deadline by which the owner is supposed to fix the problem.</td><td class="who">HPD sets, owner must meet</td></tr>
+        <tr><td class="field">originalcertifybydate</td><td class="when">5th</td><td>The original deadline by which the owner must tell HPD that the violation has been corrected.</td><td class="who">HPD sets, owner must meet</td></tr>
+        <tr><td class="field">newcorrectbydate <em>(if applicable)</em></td><td class="when">6th</td><td>If HPD grants an extension, this becomes the new deadline to complete the repair.</td><td class="who">HPD, in response</td></tr>
+        <tr><td class="field">newcertifybydate <em>(if applicable)</em></td><td class="when">7th</td><td>If the certification deadline is extended, this is the new date by which the owner must certify the repair.</td><td class="who">HPD, in response</td></tr>
+        <tr><td class="field">certifieddate</td><td class="when">8th</td><td>The date the owner actually certifies to HPD that the violation has been corrected. This may occur before or after the certification deadline.</td><td class="who">Owner</td></tr>
+        <tr><td class="field">currentstatus / currentstatusdate</td><td class="when">Last <span style="font-weight: 400; color: #8b91a0;">(changes over time)</span></td><td>The violation's latest known state (open, closed, dismissed, certified, etc.) and when it last changed.</td><td class="who">Either party</td></tr>
       </table>
       </div>
 
