@@ -1,17 +1,24 @@
 <main>
     <div class="content">
       <div class="eyebrow">About</div>
-      <h1>Evidence, not <span class="hl">verdicts.</span></h1>
+      <h1>Open violations hold the <span class="hl">evidence.</span><br>Patterns reveal the shape of a city.</h1>
 
       <p class="lede">
-        NYC's Open HPD Violations dataset holds millions of housing-violation
-        records. On its own, that's just a pile of rows. This project asks a
-        different question of it.
+        NYC's Open HPD Violations dataset holds
+        millions of housing-violation records. On their own, that's just a
+        pile of rows. Understanding what they actually say about any one
+        building is the harder problem, and the one this project exists to answer.
       </p>
 
       <blockquote>
-        What is happening to NYC's buildings, and what patterns are visible
-        in the city's housing violation records?
+        <p style="margin: 0 0 14px; font-style: italic;">What is happening to NYC's buildings?</p>
+        <p style="margin: 0; font-style: normal; font-size: 14px; color: #c3c7d3;">
+          <strong style="color: #e8eaf0;">NYC Building Stories</strong> reads
+          millions of housing-violation records for what recurs, what
+          escalates, and what quietly persists, then makes every finding
+          traceable back to the record it came from, from a single address
+          to the city as a whole.
+        </p>
       </blockquote>
 
       <p>
@@ -30,6 +37,38 @@
         is only as strong as the evidence behind it. Every building's story
         links back to the actual violation records it was generated from, so
         the underlying evidence is never more than a click away.
+      </p>
+
+      <h2>Why patterns beat raw counts</h2>
+      <p>
+        Two buildings can carry the same number on paper and mean something
+        completely different underneath it. That's the reason this project
+        measures recurrence and severity separately instead of folding them
+        into one score:
+      </p>
+      <div class="example-grid">
+        <div class="example-card">
+          <div class="ex-tag ex-teal">Isolated · Extreme severity</div>
+          <p>
+            A single Class C violation, an immediately hazardous condition
+            like no heat or a gas leak, with nothing else on record. It's
+            dangerous right now, but there's no history of it, or anything
+            else, recurring.
+          </p>
+        </div>
+        <div class="example-card">
+          <div class="ex-tag ex-red">Chronic · Low severity</div>
+          <p>
+            The same non-hazardous defect cited ten or more times over five
+            years. Nothing about it is immediately dangerous, but it's gone
+            unresolved for the better part of a decade.
+          </p>
+        </div>
+      </div>
+      <p>
+        Both are real, and neither one is "worse" in a way a single number
+        could capture. Treating them the same would erase the exact
+        distinction the records are making.
       </p>
 
       <h2>Four zoom levels, one question</h2>
@@ -70,6 +109,60 @@
         Only what the height means changes.
       </p>
 
+      <h2>A model shaped by testing</h2>
+      <p>
+        The pattern taxonomy wasn't fixed in advance. It changed as testing
+        against the full citywide dataset exposed cases the earlier version
+        couldn't represent:
+      </p>
+      <ol class="model-steps">
+        <li>
+          <span class="step-n">01</span>
+          <div><strong>Start with recurrence.</strong> An early three-bucket
+          model, Isolated, Persistent, and Chronic, grouped violations by
+          building and looked for the same defect code recurring over time.</div>
+        </li>
+        <li>
+          <span class="step-n">02</span>
+          <div><strong>Expand to the full population.</strong> Testing across
+          all 166,000+ buildings surfaced two missing cases, buildings with
+          only administrative filings and buildings with many one-off
+          defects but no repeat, which became <em>No real defects</em> and
+          <em>Widespread</em>.</div>
+        </li>
+        <li>
+          <span class="step-n">03</span>
+          <div><strong>Move recurrence to the building level.</strong> The
+          same defect showing up across different apartments in one building
+          is still one recurring problem, not several unrelated ones.</div>
+        </li>
+        <li>
+          <span class="step-n">04</span>
+          <div><strong>Stop compressing into one label.</strong> Scale,
+          recency, severity, engagement, pattern, and backlog age move
+          independently, so the final model reports all six rather than
+          collapsing them into a single score.</div>
+        </li>
+      </ol>
+
+      <h2>What the patterns reveal</h2>
+      <p>
+        Once recurrence is separated from raw volume, it stops being evenly
+        spread across the map.
+      </p>
+      <div class="stat-highlight">
+        <div class="stat-num">2.7×</div>
+        <div class="stat-body">
+          Persistent and Chronic patterns show up in roughly 26% of mapped
+          buildings with an open violation in the Bronx and Manhattan,
+          versus about 10% in Queens and Staten Island. In a few
+          neighborhoods in northern Manhattan and the west Bronx, it's over
+          half. That's a pattern in the records, not an explanation for it:
+          ownership, enforcement, and reporting behavior are outside this
+          dataset's scope. Full breakdown in <a href="/methodology" style="color: var(--teal);">Methodology</a>.
+        </div>
+      </div>
+
       <h2>Who this is for</h2>
       <p>
         Anyone trying to understand NYC housing conditions through public
@@ -95,6 +188,13 @@
           </ul>
         </div>
       </div>
+      <p style="margin-top: 12px;">
+        One more limit worth stating plainly: the source feed holds
+        currently open violations, not a full history of every violation
+        ever issued. A building with no recurring defect found here has no
+        <em>open</em> recurring defect, which isn't the same as a clean
+        record. More on that in <a href="/data" style="color: var(--teal);">Data</a>.
+      </p>
 
       <p style="margin-top: 28px; font-size: 13px; color: #8b91a0;">
         Curious how the numbers are built or where the buckets come from?
