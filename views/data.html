@@ -14,6 +14,7 @@
         <div class="row"><span class="k">Publisher</span><span class="v">NYC Open Data</span></div>
         <div class="row"><span class="k">Dataset ID</span><span class="v">csn4-vhvf</span></div>
         <div class="row"><span class="k">Access</span><span class="v">Live via the Socrata API</span></div>
+        <div class="row"><span class="k">Last refreshed</span><span class="v">Sep 1, 2026</span></div>
         <div class="row"><span class="k">Original source</span>
           <span class="v"><a href="https://data.cityofnewyork.us/Housing-Development/Open-HPD-Violations/csn4-vhvf/about_data" target="_blank" rel="noopener">View on NYC Open Data →</a></span>
         </div>
@@ -35,8 +36,15 @@
       <div class="stat-grid">
         <div class="stat-box"><div class="num">166,481</div><div class="lbl">Buildings mapped, citywide (current)</div></div>
         <div class="stat-box"><div class="num">~2.9M</div><div class="lbl">Underlying violation records (last full pull)</div></div>
+        <div class="stat-box"><div class="num">5</div><div class="lbl">Boroughs</div></div>
         <div class="stat-box"><div class="num">203</div><div class="lbl">Neighborhoods represented</div></div>
+        <div class="stat-box"><div class="num">129,405</div><div class="lbl">Property registrations covered</div></div>
       </div>
+      <p style="font-size: 13px; color: #8b91a0;">
+        A property registration is HPD's ownership filing, not a location
+        record, and one registration can cover several buildings under one
+        owner. That's why this count is lower than the building count above.
+      </p>
 
       <div class="note warn">
         <strong>The single most important caveat about this dataset:</strong>
@@ -50,10 +58,77 @@
         record of everything that was ever cited and fixed.
       </div>
 
-      <h2>What's actually in a violation record</h2>
+      <h2>What's in a violation record</h2>
       <p>
         Each row is one HPD violation, not one building and not one
-        inspection visit. A few fields drive everything downstream:
+        inspection visit.
+      </p>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="num">2.92M</div><div class="lbl">Rows in the raw feed</div></div>
+        <div class="stat-box"><div class="num">30</div><div class="lbl">Columns in the raw feed</div></div>
+      </div>
+      <p>
+        This project reads 21 of those 30 columns and drops 9. Every field
+        falls into one of four categories, each with a specific job in
+        building the map:
+      </p>
+      <ul class="plain">
+        <li><strong style="color:#e8eaf0;">Identity &amp; grouping</strong>: turns thousands of loose records into <em>one building's</em> story.</li>
+        <li><strong style="color:#e8eaf0;">Location</strong>: puts that building's dot on the map, in the right neighborhood.</li>
+        <li><strong style="color:#e8eaf0;">Defect &amp; severity</strong>: decides the color you see on that building.</li>
+        <li><strong style="color:#e8eaf0;">Timeline &amp; status</strong>: fills the evidence view when you click it.</li>
+      </ul>
+      <p>
+        That's the order below: group the records, place the building,
+        color it, then show its history. Each category gets a table listing
+        every field in it, what it is, whether it's used, and why, plus
+        a line of text only where a field needs more than the table can say.
+      </p>
+
+      <h3 class="field-group-title">Identity &amp; grouping</h3>
+      <p class="maps-to">Why this comes first: without a reliable building key, there's no "building" to place, color, or show a history for. Everything downstream depends on this.</p>
+      <div class="table-wrap">
+      <table class="data-table field-audit-table">
+        <tr><th>Field</th><th>What it is</th><th>Why</th></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>buildingid</td><td>Building identifier</td><td>The confirmed-reliable key every record is grouped into a building by.</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>novid</td><td>Notice-of-Violation identifier</td><td>Groups multiple violation line-items issued together on one notice.</td></tr>
+        <tr><td class="field"><span class="used-mark no">✕</span>registrationid</td><td>Property registration ID</td><td>Secondary key; <code>buildingid</code> is the one confirmed reliable, so a second grouping key isn't needed.</td></tr>
+        <tr><td class="field"><span class="used-mark no">✕</span>violationid</td><td>Per-row violation ID</td><td>We never need to address one row individually, only groups of them.</td></tr>
+      </table>
+      </div>
+
+      <h3 class="field-group-title">Location</h3>
+      <p class="maps-to">Now that records are grouped into one building: where does that building actually sit? This is what places its dot on the map and gives it a neighborhood.</p>
+      <div class="table-wrap">
+      <table class="data-table field-audit-table">
+        <tr><th>Field</th><th>What it is</th><th>Why</th></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>boro</td><td>Borough (text)</td><td>Geography and display.</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>housenumber</td><td>Street number</td><td>Address display.</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>streetname</td><td>Street name</td><td>Address display.</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>apartment</td><td>Unit number</td><td>Distinguishes a unit-specific violation from a building-wide one.</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>block</td><td>Tax block</td><td>Join key (with <code>lot</code>) that locates the building via PLUTO.</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>lot</td><td>Tax lot</td><td>Join key (with <code>block</code>) that locates the building via PLUTO.</td></tr>
+        <tr><td class="field"><span class="used-mark no">✕</span>boroid</td><td>Borough (numeric)</td><td>Duplicate of <code>boro</code>.</td></tr>
+        <tr><td class="field"><span class="used-mark no">✕</span>streetcode</td><td>Street code (numeric)</td><td>Duplicate of <code>streetname</code>.</td></tr>
+        <tr><td class="field"><span class="used-mark no">✕</span>zip</td><td>Postal code</td><td>Address-display field, superseded once PLUTO supplies real coordinates.</td></tr>
+        <tr><td class="field"><span class="used-mark no">✕</span>lowhousenumber</td><td>Address-range start</td><td>Range variant of <code>housenumber</code>; not needed for a single address.</td></tr>
+        <tr><td class="field"><span class="used-mark no">✕</span>highhousenumber</td><td>Address-range end</td><td>Range variant of <code>housenumber</code>; not needed for a single address.</td></tr>
+        <tr><td class="field"><span class="used-mark no">✕</span>story</td><td>Floor</td><td>Superseded by PLUTO's real floor-count data.</td></tr>
+      </table>
+      </div>
+
+      <h3 class="field-group-title">Defect &amp; severity</h3>
+      <p class="maps-to">The building is placed. Now: what's actually wrong there? This is what decides the color you see on it.</p>
+      <div class="table-wrap">
+      <table class="data-table field-audit-table">
+        <tr><th>Field</th><th>What it is</th><th>Why</th></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>class</td><td>Severity (A/B/C/I)</td><td>Core severity signal, breakdown below.</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>novdescription</td><td>Free-text description</td><td>The actual defect text.</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>ordernumber</td><td>Problem-category code</td><td>Not a unique ID: one of 396 codes shared citywide, which is what lets recurrence detection spot the <em>same</em> defect recurring (see <a href="/methodology" style="color: var(--teal);">Methodology</a>).</td></tr>
+      </table>
+      </div>
+      <p style="font-size: 13.5px; color: #c3c7d3; margin: 4px 0 8px;">
+        The breakdown promised above, every currently open violation, by class:
       </p>
       <div class="table-wrap">
       <table class="data-table">
@@ -64,170 +139,93 @@
         <tr><td>I: Order to Repair/Vacate (info-only, no deadline)</td><td class="num">238,747</td><td class="num">8.2%</td></tr>
       </table>
       </div>
-      <p>
-        <code>BuildingID</code> is confirmed reliable for grouping records
-        into buildings, the core assumption the whole project depends
-        on. <code>OrderNumber</code> isn't a unique ID despite the name; it's
-        one of only 396 standardized problem-category codes shared across
-        unrelated buildings citywide, which is what makes it possible to
-        detect the <em>same kind of defect</em> recurring at a building over
-        time (see <a href="/methodology" style="color: var(--teal);">Methodology</a>).
-      </p>
 
-      <h2>The timeline behind a violation</h2>
-      <p>
-        A violation is not a single event with a single date. HPD's
-        process records it at up to nine distinct points in time, from the
-        moment an inspector sees the condition to whatever its status is
-        today. These are the same fields behind the timeline shown in every
-        building's evidence view on the map:
-      </p>
+      <h3 class="field-group-title">Timeline &amp; status</h3>
+      <p class="maps-to">Grouped, placed, colored. Last question: what actually happened, and when? This is what fills the evidence view when you click a building.</p>
       <div class="table-wrap">
-      <table class="data-table tl-step-table">
+      <table class="data-table field-audit-table tl-step-table">
         <tr><th>Field</th><th>When it happens</th><th>What it records</th><th>Whose action</th></tr>
-        <tr><td class="field">inspectiondate</td><td class="when">1st</td><td>An HPD inspector visits the property and observes a violation. This is when the violation is officially found.</td><td class="who">HPD</td></tr>
-        <tr><td class="field">approveddate</td><td class="when">2nd</td><td>The violation record is reviewed and officially approved by HPD. This is an administrative step confirming the violation.</td><td class="who">HPD</td></tr>
-        <tr><td class="field">novissueddate</td><td class="when">3rd</td><td>The Notice of Violation (NOV) is sent to the property owner, informing them of the violation and what needs to be fixed.</td><td class="who">HPD</td></tr>
-        <tr><td class="field">originalcorrectbydate</td><td class="when">4th</td><td>The original deadline by which the owner is supposed to fix the problem.</td><td class="who">HPD sets, owner must meet</td></tr>
-        <tr><td class="field">originalcertifybydate</td><td class="when">5th</td><td>The original deadline by which the owner must tell HPD that the violation has been corrected.</td><td class="who">HPD sets, owner must meet</td></tr>
-        <tr><td class="field">newcorrectbydate <em>(if applicable)</em></td><td class="when">6th</td><td>If HPD grants an extension, this becomes the new deadline to complete the repair.</td><td class="who">HPD, in response</td></tr>
-        <tr><td class="field">newcertifybydate <em>(if applicable)</em></td><td class="when">7th</td><td>If the certification deadline is extended, this is the new date by which the owner must certify the repair.</td><td class="who">HPD, in response</td></tr>
-        <tr><td class="field">certifieddate</td><td class="when">8th</td><td>The date the owner actually certifies to HPD that the violation has been corrected. This may occur before or after the certification deadline.</td><td class="who">Owner</td></tr>
-        <tr><td class="field">currentstatus / currentstatusdate</td><td class="when">Last <span style="font-weight: 400; color: #8b91a0;">(changes over time)</span></td><td>The violation's latest known state (open, closed, dismissed, certified, etc.) and when it last changed.</td><td class="who">Either party</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>inspectiondate</td><td class="when">1st</td><td>An HPD inspector visits the property and observes a violation. This is when the violation is officially found.</td><td class="who">HPD</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>approveddate</td><td class="when">2nd</td><td>The violation record is reviewed and officially approved by HPD. This is an administrative step confirming the violation.</td><td class="who">HPD</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>novissueddate</td><td class="when">3rd</td><td>The Notice of Violation (NOV) is sent to the property owner, informing them of the violation and what needs to be fixed.</td><td class="who">HPD</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>originalcorrectbydate</td><td class="when">4th</td><td>The original deadline by which the owner is supposed to fix the problem.</td><td class="who">HPD sets, owner must meet</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>originalcertifybydate</td><td class="when">5th</td><td>The original deadline by which the owner must tell HPD that the violation has been corrected.</td><td class="who">HPD sets, owner must meet</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>newcorrectbydate <em>(if applicable)</em></td><td class="when">6th</td><td>If HPD grants an extension, this becomes the new deadline to complete the repair.</td><td class="who">HPD, in response</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>newcertifybydate <em>(if applicable)</em></td><td class="when">7th</td><td>If the certification deadline is extended, this is the new date by which the owner must certify the repair.</td><td class="who">HPD, in response</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>certifieddate</td><td class="when">8th</td><td>The date the owner actually certifies to HPD that the violation has been corrected. This may occur before or after the certification deadline.</td><td class="who">Owner</td></tr>
+        <tr><td class="field"><span class="used-mark yes">✓</span>currentstatus / currentstatusdate</td><td class="when">Last <span style="font-weight: 400; color: #8b91a0;">(changes over time)</span></td><td>The violation's latest known state (open, closed, dismissed, certified, etc.) and when it last changed.</td><td class="who">Either party</td></tr>
+        <tr><td class="field"><span class="used-mark no">✕</span>currentstatusid</td><td class="when">&mdash;</td><td>Duplicate of <code>currentstatus</code>, kept as a numeric code; not read.</td><td class="who">&mdash;</td></tr>
       </table>
       </div>
 
+      <p class="maps-to" style="max-width: 680px;">
+        Grouped, placed, colored, timed. That's the full chain from a
+        raw HPD row to a building's story on the map. Where each of those
+        pieces actually comes from is below, if you want to check it
+        yourself.
+      </p>
+
+      <h2>What was added to make it mappable</h2>
       <p>
-        Measured directly against each other on the same records (13,333
-        sampled violations inspected in the last 5 years, each pair checked
-        only where both fields are populated), the process moves in this
-        order and at this pace:
+        HPD's violation records don't come with coordinates, a building
+        shape, or a neighborhood name. Four of these sources supply content
+        you actually see on the map; the last one exists only to bridge one
+        dataset's ID system to another's.
       </p>
       <div class="table-wrap">
       <table class="data-table">
-        <tr><th>Step</th><th>Field</th><th>Median timing from inspection</th><th class="num">Reaches this step</th></tr>
-        <tr><td>1</td><td class="field">inspectiondate</td><td>Day 0</td><td class="num">100%</td></tr>
-        <tr><td>2</td><td class="field">approveddate</td><td>Same day</td><td class="num">100%</td></tr>
-        <tr><td>3</td><td class="field">novissueddate</td><td>+2 days</td><td class="num">92.4%</td></tr>
-        <tr><td>4</td><td class="field">originalcorrectbydate</td><td>+38 days</td><td class="num">90.3%</td></tr>
-        <tr><td>5</td><td class="field">originalcertifybydate</td><td>+52 days</td><td class="num">90.3%</td></tr>
-        <tr><td>6</td><td class="field">certifieddate</td><td>+36 days (for those that reach it)</td><td class="num">10.7%</td></tr>
+        <tr><th>Source</th><th>ID</th><th>Used for</th><th>Verify it</th></tr>
+        <tr>
+          <td>NYC GeoSearch</td>
+          <td class="field">None (API service)</td>
+          <td>Precise per-address coordinates, preferred over PLUTO. 166,372/166,481 (99.93%) geocoded</td>
+          <td><a href="https://geosearch.planninglabs.nyc" target="_blank" rel="noopener" style="color: var(--teal);">geosearch.planninglabs.nyc &rarr;</a></td>
+        </tr>
+        <tr>
+          <td>NYC PLUTO</td>
+          <td class="field">64uk-42ks</td>
+          <td>Floor count, footprint area (fallback shape when Building Footprints geometry is missing), and fallback coordinates for the small remainder GeoSearch couldn't match</td>
+          <td><a href="https://data.cityofnewyork.us/d/64uk-42ks" target="_blank" rel="noopener" style="color: var(--teal);">View on NYC Open Data &rarr;</a></td>
+        </tr>
+        <tr>
+          <td>NYC NTA Boundaries</td>
+          <td class="field">9nt8-h7nd</td>
+          <td>Neighborhood assignment, point-in-polygon</td>
+          <td><a href="https://data.cityofnewyork.us/d/9nt8-h7nd" target="_blank" rel="noopener" style="color: var(--teal);">View on NYC Open Data &rarr;</a></td>
+        </tr>
+        <tr>
+          <td>NYC Building Footprints</td>
+          <td class="field">5zhs-2jue</td>
+          <td>Real building shape + roof height. 99.4% matched, powers the "Buildings" height lens</td>
+          <td><a href="https://data.cityofnewyork.us/d/5zhs-2jue" target="_blank" rel="noopener" style="color: var(--teal);">View on NYC Open Data &rarr;</a></td>
+        </tr>
+        <tr>
+          <td>HPD Buildings Subject to HPD Jurisdiction</td>
+          <td class="field">kj4p-ruqc</td>
+          <td>ID bridge only: resolves <code>buildingid</code> to BIN/BBL; no content of its own shown on the map</td>
+          <td><a href="https://data.cityofnewyork.us/d/kj4p-ruqc" target="_blank" rel="noopener" style="color: var(--teal);">View on NYC Open Data &rarr;</a></td>
+        </tr>
       </table>
       </div>
-      <p style="font-size: 13px; color: #8b91a0;">
-        HPD's own administrative turnaround is fast: inspection to notice
-        issuance is a median of 2&ndash;3 days. Fix-by deadlines, measured
-        directly from the data rather than from an external secondary
-        source, run shorter for the most urgent class than commonly
-        assumed: Class A a median 95 days, Class B 35 days, Class C 14 days.
-        Heat and hot water violations move on an even faster
-        internal track within Class C.
-      </p>
-
-      <div class="stat-grid">
-        <div class="stat-box"><div class="num">10.8%</div><div class="lbl">Of all open violations have ever been certified by the owner</div></div>
-        <div class="stat-box"><div class="num">65.2%</div><div class="lbl">Of those certifications landed on-time or early</div></div>
-        <div class="stat-box"><div class="num">42.7%</div><div class="lbl">Of uncertified violations show no status change in 5+ years</div></div>
-      </div>
-      <p>
-        Certification is uncommon, but not because owners who attempt it
-        respond late; most who do certify are close to on time. It's
-        uncommon because most violations are never certified at all. And
-        for that larger uncertified population, a plurality have had no
-        recorded activity of any kind: no certification, no
-        reinspection, no status update, in over five years. This is
-        the reason the evidence timeline's <a href="/methodology" style="color: var(--teal);">"Frozen" state</a>
-        exists (using a shorter 2-year silence threshold, so it flags
-        sooner than the 5-year figure above): the dataset's own concept of
-        "open" means "never formally closed," not "actively being worked on
-        right now."
-      </p>
-
-      <p style="font-size: 13.5px; color: #c3c7d3; margin-bottom: 8px;">
-        One real violation record, every timeline field, in order:
-      </p>
-      <div class="example-block">
-        <div class="row"><span class="date">2016-04-07</span><span class="label">Inspected</span><span class="detail">HPD inspector observes a missing carbon monoxide detector.</span></div>
-        <div class="gap">+5 days</div>
-        <div class="row"><span class="date">2016-04-12</span><span class="label">HPD approved</span><span class="detail">Record finalized internally.</span></div>
-        <div class="gap">+1 day</div>
-        <div class="row"><span class="date">2016-04-13</span><span class="label">Notice issued</span><span class="detail">Formal Notice of Violation sent to the owner.</span></div>
-        <div class="gap">+35 days</div>
-        <div class="row"><span class="date">2016-05-18</span><span class="label">Fix-by deadline</span><span class="detail">Class B correction window.</span></div>
-        <div class="gap">+14 days</div>
-        <div class="row"><span class="date">2016-06-01</span><span class="label">Self-report deadline</span><span class="detail">Owner's window to tell HPD it's fixed.</span></div>
-        <div class="gap">+7 years, 1 month</div>
-        <div class="row"><span class="date">2023-07-06</span><span class="label">Status now</span><span class="detail">"Violation will be reinspected," last touched over 7 years after the notice was issued.</span></div>
-      </div>
-      <p style="font-size: 13px; color: #8b91a0;">
-        This record was never certified. Its status field is the same one
-        the map reads to color it "Stalled," not because the owner is
-        necessarily still ignoring it today, but because nothing in the
-        dataset has recorded otherwise since 2023.
-      </p>
-
-      <h2>Violations are heavily concentrated, not evenly spread</h2>
-      <p>
-        The average of ~17.4 violations per building is misleading on its
-        own. The current top building, <strong style="color:#e8eaf0;">530
-        East 169th Street, Bronx</strong>, has 1,268 open violations by
-        itself. Meanwhile the citywide median is just 6, and 35.8% of
-        buildings have 3 or fewer open violations. A handful of buildings
-        carry a wildly disproportionate share of the total, which is
-        exactly why this project doesn't rank buildings by raw count.
-      </p>
-      <div class="stat-grid">
-        <div class="stat-box"><div class="num">6</div><div class="lbl">Median open violations per building</div></div>
-        <div class="stat-box"><div class="num">39</div><div class="lbl">90th percentile</div></div>
-        <div class="stat-box"><div class="num">1,268</div><div class="lbl">Highest single-building count, currently</div></div>
-      </div>
-      <p style="font-size: 13px; color: #8b91a0;">
-        This ranking moves over time as violations open and close on real
-        buildings. An earlier data pull had a different Brooklyn
-        building briefly in the top spot with over 2,000 open violations.
-        The identity of "the most-cited building" is not a fixed fact about
-        the city; it's a snapshot of whatever this feed currently shows.
-      </p>
-
-      <h2>Data cleaning rules applied before analysis</h2>
-      <p>
-        A few properties of the raw feed require explicit handling before
-        violation counts mean what they appear to mean:
-      </p>
-      <ul class="plain">
-        <li><strong style="color:#e8eaf0;">Same-day duplicate filings.</strong> A single underlying defect is sometimes filed as more than one record on the same day. Occurrences are deduplicated by building + apartment + description + issue date before anything is counted as a separate recurrence.</li>
-        <li><strong style="color:#e8eaf0;">Certification data is sparse by design, not incomplete.</strong> 88.7% of records have no <code>CertifiedDate</code>, because most open violations simply haven't had a certification attempt yet. This reflects where each violation sits in HPD's process, not missing data.</li>
-        <li><strong style="color:#e8eaf0;">Date fields are range-validated.</strong> The raw feed contains a small number of dates outside any plausible calendar range. All date-based analysis filters to a sane window before any min/max or trend calculation runs on it.</li>
-        <li><strong style="color:#e8eaf0;">Regulatory filings are distinguished from physical defects.</strong> A small set of order codes recur by design on a fixed compliance calendar (an annual bedbug-report filing, a registration renewal) rather than because a physical problem keeps happening. These are identified by <code>OrderNumber</code> and excluded from recurrence detection (details in <a href="/methodology" style="color: var(--teal);">Methodology</a>).</li>
-      </ul>
-
-      <h2>What was added</h2>
-      <p>
-        HPD's violation records don't come with coordinates or building
-        shape, so two more public datasets fill that in:
-      </p>
-      <div class="source-card">
-        <div class="row"><span class="k">Location + floor heights</span><span class="v">NYC PLUTO dataset (~99.75% match rate at build time)</span></div>
-        <div class="row"><span class="k">Neighborhood boundaries</span><span class="v">NYC NTA boundaries, point-in-polygon; every one of the 166,481 buildings currently mapped carries a neighborhood</span></div>
-        <div class="row"><span class="k">Building footprint size</span><span class="v">Estimated from PLUTO's building area &amp; floor count, bucketed into 5 size tiers</span></div>
-      </div>
-      <p style="font-size: 13px; color: #8b91a0;">
-        A small share of buildings couldn't be matched to coordinates
-        (mostly condo/complex sub-lots) and are excluded from the map
-        entirely, rather than shown in the wrong place. The PLUTO
-        match-rate figure above is from the pipeline's build step, not
-        recomputed on every data refresh the way the pattern and severity
-        numbers on this page are.
+      <p style="font-size: 12px; color: #6c7180;">
+        All 4 dataset publishers here are NYC city agencies (Dept. of City
+        Planning; Office of Technology and Innovation for Footprints; HPD
+        for the jurisdiction bridge). Each link above goes straight to
+        that agency's own listing on NYC Open Data.
       </p>
 
       <div class="note red">
-        <strong>A known rendering rule:</strong> PLUTO assigns one coordinate
-        per tax lot, so distinct HPD buildings sharing a lot (9,805
-        buildings, 5.9% of the dataset) would otherwise render as a single
-        stacked column. These are spread into a small ring around the
-        shared point so each building stays visible and individually
-        clickable. This is a display adjustment, not a change to any
-        building's underlying data.
+        <strong>A known rendering rule:</strong> a small number of buildings
+        still end up sharing an exact coordinate, either a PLUTO
+        lot-centroid fallback shared by several buildings, or, more rarely,
+        two addresses GeoSearch geocoded to the same point. Currently
+        <strong style="color:#e8eaf0;">1,417 buildings (0.85%)</strong>, in
+        547 groups, are affected (largest group: 19 buildings sharing one
+        point). Each group is spread into a small grid, scaled to the
+        group's own building size, so every building stays visible and
+        individually clickable. This is a display adjustment, not a change
+        to any building's underlying data, and the count shrinks further
+        each time more buildings get a real geocoded address.
       </div>
 
       <p style="font-size: 13px; color: #8b91a0;">
